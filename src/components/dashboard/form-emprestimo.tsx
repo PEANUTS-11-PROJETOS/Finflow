@@ -56,7 +56,7 @@ export function FormEmprestimo({ clientes }: Props) {
   })
 
   // Prévia Price
-  const [vp, vt, vn] = useWatch({ control: formPrice.control, name: ['valor_principal', 'taxa_juros', 'num_parcelas'] })
+  const [vp, vt, vn, clienteIdPrice] = useWatch({ control: formPrice.control, name: ['valor_principal', 'taxa_juros', 'num_parcelas', 'cliente_id'] })
   const valorParcelaPrice = (() => {
     if (!vp || vp <= 0 || !vn || vn <= 0) return null
     const t = (vt ?? 0) / 100
@@ -65,8 +65,11 @@ export function FormEmprestimo({ clientes }: Props) {
   })()
 
   // Prévia Renovável
-  const [rvp, rtr] = useWatch({ control: formRenovavel.control, name: ['valor_principal', 'taxa_juros'] })
+  const [rvp, rtr, clienteIdRenovavel] = useWatch({ control: formRenovavel.control, name: ['valor_principal', 'taxa_juros', 'cliente_id'] })
   const jurosRenovavel = (rvp && rvp > 0 && rtr != null && rtr >= 0) ? rvp * (rtr / 100) : null
+
+  const nomeClientePrice     = clientes.find(c => c.id === clienteIdPrice)?.nome
+  const nomeClienteRenovavel = clientes.find(c => c.id === clienteIdRenovavel)?.nome
 
   async function onSubmitPrice(values: PriceValues) {
     const result = await criarEmprestimo(values)
@@ -163,6 +166,12 @@ export function FormEmprestimo({ clientes }: Props) {
           <Card className="h-fit">
             <CardContent className="pt-6 space-y-3">
               <p className="text-sm font-medium text-muted-foreground">Prévia — Tabela Price</p>
+              {nomeClientePrice && (
+                <div className="rounded-md bg-muted px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Cliente</p>
+                  <p className="text-sm font-semibold">{nomeClientePrice}</p>
+                </div>
+              )}
               {valorParcelaPrice ? (
                 <>
                   <div><p className="text-xs text-muted-foreground">Parcela mensal</p><p className="text-2xl font-bold">{fmtMoeda(valorParcelaPrice)}</p></div>
@@ -196,6 +205,12 @@ export function FormEmprestimo({ clientes }: Props) {
           <Card className="h-fit">
             <CardContent className="pt-6 space-y-3">
               <p className="text-sm font-medium text-muted-foreground">Prévia mensal</p>
+              {nomeClienteRenovavel && (
+                <div className="rounded-md bg-muted px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Cliente</p>
+                  <p className="text-sm font-semibold">{nomeClienteRenovavel}</p>
+                </div>
+              )}
               {jurosRenovavel !== null && rvp > 0 ? (
                 <>
                   <div><p className="text-xs text-muted-foreground">Juros do período</p><p className="text-2xl font-bold text-amber-600">{fmtMoeda(jurosRenovavel)}</p></div>
