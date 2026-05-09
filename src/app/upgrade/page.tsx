@@ -74,8 +74,8 @@ export default async function UpgradePage() {
         </p>
 
         <div className="text-center">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/login">Sair da conta</Link>
+          <Button variant="ghost" size="sm" render={<Link href="/login" />}>
+            Sair da conta
           </Button>
         </div>
       </div>
