@@ -93,7 +93,13 @@ export function FormEmprestimo({ clientes }: Props) {
         <FormItem>
           <FormLabel>Cliente *</FormLabel>
           <Select onValueChange={field.onChange} value={field.value}>
-            <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger></FormControl>
+            <FormControl>
+              <SelectTrigger>
+                <span className={`flex-1 text-left text-sm ${!field.value ? 'text-muted-foreground' : ''}`}>
+                  {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
+                </span>
+              </SelectTrigger>
+            </FormControl>
             <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
           </Select>
           <FormMessage />
