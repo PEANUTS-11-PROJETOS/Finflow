@@ -25,8 +25,8 @@ export default async function ClienteDetalhePage({ params }: { params: Promise<{
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/clientes"><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" render={<Link href="/clientes" />}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
@@ -53,11 +53,9 @@ export default async function ClienteDetalhePage({ params }: { params: Promise<{
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Empréstimos</h2>
-          <Button size="sm" asChild>
-            <Link href={`/emprestimos/novo?cliente=${id}`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo empréstimo
-            </Link>
+          <Button size="sm" render={<Link href={`/emprestimos/novo?cliente=${id}`} />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo empréstimo
           </Button>
         </div>
         <EmprestimosTable emprestimos={(emprestimos ?? []) as Emprestimo[]} />

@@ -84,17 +84,13 @@ export function ClientesTable({ clientes }: Props) {
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+                      <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/clientes/${c.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Ver detalhes
-                        </Link>
+                      <DropdownMenuItem render={<Link href={`/clientes/${c.id}`} />}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver detalhes
                       </DropdownMenuItem>
                       {c.ativo && (
                         <DropdownMenuItem

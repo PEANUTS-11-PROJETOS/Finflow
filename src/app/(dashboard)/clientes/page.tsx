@@ -26,11 +26,9 @@ export default async function ClientesPage() {
             {limite.totalClientes} {limite.limite === -1 ? '' : `/ ${limite.limite}`} clientes ativos
           </p>
         </div>
-        <Button asChild disabled={!limite.permitido}>
-          <Link href="/clientes/novo">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo cliente
-          </Link>
+        <Button disabled={!limite.permitido} render={<Link href="/clientes/novo" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo cliente
         </Button>
       </div>
 

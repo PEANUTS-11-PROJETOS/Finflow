@@ -39,8 +39,8 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/emprestimos"><ArrowLeft className="h-4 w-4" /></Link>
+        <Button variant="ghost" size="icon" render={<Link href="/emprestimos" />}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">

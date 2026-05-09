@@ -54,10 +54,8 @@ export function EmprestimosTable({ emprestimos }: Props) {
                 </Badge>
               </TableCell>
               <TableCell>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href={`/emprestimos/${e.id}`}>
-                    <Eye className="h-4 w-4" />
-                  </Link>
+                <Button variant="ghost" size="icon" render={<Link href={`/emprestimos/${e.id}`} />}>
+                  <Eye className="h-4 w-4" />
                 </Button>
               </TableCell>
             </TableRow>

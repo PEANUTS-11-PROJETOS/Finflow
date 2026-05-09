@@ -25,11 +25,9 @@ export default async function EmprestimosPage() {
             {emprestimos?.length ?? 0} empréstimos no total
           </p>
         </div>
-        <Button asChild>
-          <Link href="/emprestimos/novo">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo empréstimo
-          </Link>
+        <Button render={<Link href="/emprestimos/novo" />}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo empréstimo
         </Button>
       </div>
 
