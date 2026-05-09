@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
@@ -46,12 +46,12 @@ export function FormEmprestimo({ clientes }: Props) {
   const [tipo, setTipo] = useState<'price' | 'renovavel'>('price')
 
   const formPrice = useForm<PriceValues>({
-    resolver: zodResolver(schemaPrice),
+    resolver: zodResolver(schemaPrice) as Resolver<PriceValues>,
     defaultValues: { tipo: 'price', cliente_id: '', observacoes: '' },
   })
 
   const formRenovavel = useForm<RenovavelValues>({
-    resolver: zodResolver(schemaRenovavel),
+    resolver: zodResolver(schemaRenovavel) as Resolver<RenovavelValues>,
     defaultValues: { tipo: 'renovavel', cliente_id: '', observacoes: '' },
   })
 
