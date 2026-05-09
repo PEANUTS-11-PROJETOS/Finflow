@@ -4,10 +4,13 @@ import { Sidebar } from '@/components/dashboard/sidebar'
 import { Header } from '@/components/dashboard/header'
 import { Toaster } from '@/components/ui/sonner'
 
+const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  if (user.email === ADMIN_EMAIL) redirect('/admin')
 
   const { data: credor } = await supabase
     .from('credores')

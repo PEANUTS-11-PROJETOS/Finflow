@@ -20,14 +20,14 @@ export default async function AdminPage() {
     { data: emprestimosData },
     { data: credores },
   ] = await Promise.all([
-    admin.from('credores').select('*', { count: 'exact', head: true }),
-    admin.from('credores').select('*', { count: 'exact', head: true }).eq('ativo', true),
+    admin.from('credores').select('*', { count: 'exact', head: true }).neq('email', ADMIN_EMAIL),
+    admin.from('credores').select('*', { count: 'exact', head: true }).eq('ativo', true).neq('email', ADMIN_EMAIL),
     admin.from('emprestimos').select('valor_principal, status'),
     admin.from('credores').select(`
       id, nome, email, plano, ativo, created_at,
       clientes(count),
       emprestimos(count)
-    `).order('created_at', { ascending: false }),
+    `).neq('email', ADMIN_EMAIL).order('created_at', { ascending: false }),
   ])
 
   const totalEmprestado = emprestimosData?.reduce((s, e) => s + Number(e.valor_principal), 0) ?? 0
