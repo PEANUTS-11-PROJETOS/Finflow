@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Sidebar } from '@/components/dashboard/sidebar'
 import { Header } from '@/components/dashboard/header'
+import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Toaster } from '@/components/ui/sonner'
 import { trialExpirado } from '@/lib/planos'
 
@@ -28,15 +28,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (credor && trialExpirado(credor.plano, credor.created_at)) redirect('/upgrade')
 
   return (
-    <div className="flex h-screen overflow-hidden bg-muted/40">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
+    <>
+      <DashboardShell header={<Header />}>
+        {children}
+      </DashboardShell>
       <Toaster richColors position="top-right" />
-    </div>
+    </>
   )
 }

@@ -15,7 +15,7 @@ export async function Header() {
     : '?'
 
   return (
-    <header className="flex h-14 items-center justify-end border-b bg-background px-6 gap-3">
+    <header className="flex flex-1 items-center justify-end bg-background px-6 gap-3">
       <Badge variant="secondary" className="capitalize">
         {credor?.plano ?? 'free'}
       </Badge>

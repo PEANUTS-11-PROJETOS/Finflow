@@ -19,11 +19,12 @@ const navLinks = [
   { href: '/configuracoes',label: 'Configurações', icon: Settings },
 ]
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const router   = useRouter()
 
   async function sair() {
+    onClose?.()
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
@@ -39,6 +40,7 @@ export function Sidebar() {
           <Link
             key={href}
             href={href}
+            onClick={onClose}
             className={cn(
               'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               pathname === href || pathname.startsWith(href + '/')
