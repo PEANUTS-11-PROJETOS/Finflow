@@ -69,12 +69,17 @@ export function LoginForm() {
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
         </Button>
-        <p className="text-center text-sm text-muted-foreground">
-          Não tem conta?{' '}
-          <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
-            Cadastre-se grátis
+        <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+          <Link href="/recuperar-senha" className="underline underline-offset-4 hover:text-primary">
+            Esqueci minha senha
           </Link>
-        </p>
+          <span>
+            Não tem conta?{' '}
+            <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
+              Cadastre-se grátis
+            </Link>
+          </span>
+        </div>
       </form>
     </Form>
   )
