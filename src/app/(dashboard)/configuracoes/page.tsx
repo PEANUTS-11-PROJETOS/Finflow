@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { PLANOS } from '@/lib/planos'
+import { PLANOS, trialDiasRestantes } from '@/lib/planos'
+import { Check, X } from 'lucide-react'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -11,14 +12,15 @@ export default async function ConfiguracoesPage() {
 
   const { data: credor } = await supabase
     .from('credores')
-    .select('nome, email, plano')
+    .select('nome, email, plano, created_at')
     .eq('id', user.id)
     .single()
 
   const plano = (credor?.plano ?? 'free') as keyof typeof PLANOS
+  const diasRestantes = plano === 'free' ? trialDiasRestantes(credor?.created_at ?? '') : null
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
 
       <Card>
@@ -38,12 +40,14 @@ export default async function ConfiguracoesPage() {
             <span className="text-muted-foreground">Plano atual</span>
             <Badge variant="secondary" className="capitalize">{plano}</Badge>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Limite de clientes</span>
-            <span className="font-medium">
-              {PLANOS[plano].clientes === -1 ? 'Ilimitado' : PLANOS[plano].clientes}
-            </span>
-          </div>
+          {diasRestantes !== null && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Trial restante</span>
+              <span className={`font-medium ${diasRestantes <= 3 ? 'text-destructive' : 'text-yellow-600'}`}>
+                {diasRestantes} dia{diasRestantes !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -52,28 +56,46 @@ export default async function ConfiguracoesPage() {
           <CardTitle className="text-base">Planos disponíveis</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             {(Object.entries(PLANOS) as [keyof typeof PLANOS, typeof PLANOS[keyof typeof PLANOS]][]).map(([key, p]) => (
               <div
                 key={key}
-                className={`rounded-lg border p-4 space-y-2 ${plano === key ? 'border-primary bg-primary/5' : ''}`}
+                className={`rounded-lg border p-4 space-y-3 ${plano === key ? 'border-primary bg-primary/5' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">{p.nome}</span>
                   {plano === key && <Badge>Atual</Badge>}
                 </div>
-                <p className="text-2xl font-bold">
-                  {p.preco === 0 ? 'Grátis' : `R$ ${(p.preco / 100).toFixed(2).replace('.', ',')}`}
-                  {p.preco > 0 && <span className="text-sm font-normal text-muted-foreground">/mês</span>}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {p.clientes === -1 ? 'Clientes ilimitados' : `Até ${p.clientes} clientes`}
-                </p>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {p.preco_mensal === 0 ? 'Grátis' : `R$ ${(p.preco_mensal / 100).toFixed(2).replace('.', ',')}`}
+                    {p.preco_mensal > 0 && <span className="text-sm font-normal text-muted-foreground">/mês</span>}
+                  </p>
+                  {p.preco_anual > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      ou R$ {(p.preco_anual / 100).toFixed(2).replace('.', ',')}/ano
+                    </p>
+                  )}
+                </div>
+                <ul className="space-y-1.5">
+                  {p.features.map(f => (
+                    <li key={f} className="flex items-start gap-1.5 text-xs">
+                      <Check className="h-3.5 w-3.5 text-green-600 shrink-0 mt-0.5" />
+                      {f}
+                    </li>
+                  ))}
+                  {p.nao_inclui.map(f => (
+                    <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <X className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-4">
-            Integração com Stripe disponível na Fase 3 do projeto.
+            Para fazer upgrade entre em contato: soaresvinicius11112@gmail.com
           </p>
         </CardContent>
       </Card>

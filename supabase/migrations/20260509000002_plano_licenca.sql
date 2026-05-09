@@ -1,0 +1,2 @@
+ALTER TABLE credores ADD COLUMN IF NOT EXISTS ciclo_plano TEXT;
+ALTER TABLE credores ADD COLUMN IF NOT EXISTS data_vencimento DATE;

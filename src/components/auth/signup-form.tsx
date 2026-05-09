@@ -38,15 +38,20 @@ export function SignupForm() {
       setErro(error.message)
       return
     }
+    await fetch('/api/notify-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email }),
+    })
     setSucesso(true)
   }
 
   if (sucesso) {
     return (
-      <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-center text-sm">
-        <p className="font-medium">Conta criada!</p>
-        <p className="mt-1 text-muted-foreground">
-          Verifique seu email para confirmar o cadastro.
+      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-center text-sm space-y-1">
+        <p className="font-medium">Cadastro realizado!</p>
+        <p className="text-muted-foreground">
+          Sua conta está aguardando aprovação do administrador. Em breve você receberá acesso.
         </p>
       </div>
     )

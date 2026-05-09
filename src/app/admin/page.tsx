@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
-import { AdminTable } from '@/components/admin/admin-table'
+import { AdminTable, type CredorAdmin } from '@/components/admin/admin-table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fmtMoeda } from '@/lib/utils'
+import { precoPlano } from '@/lib/planos'
 
 const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
 
@@ -12,74 +13,67 @@ export default async function AdminPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
 
-  const admin = createAdminClient()
+  // --- MOCK para visualização (remover quando houver dados reais) ---
+  const MOCK = true
 
-  const [
-    { count: totalCredores },
-    { count: creditoresAtivos },
-    { data: emprestimosData },
-    { data: credores },
-  ] = await Promise.all([
-    admin.from('credores').select('*', { count: 'exact', head: true }).neq('email', ADMIN_EMAIL),
-    admin.from('credores').select('*', { count: 'exact', head: true }).eq('ativo', true).neq('email', ADMIN_EMAIL),
-    admin.from('emprestimos').select('valor_principal, status'),
-    admin.from('credores').select(`
-      id, nome, email, plano, ativo, created_at,
-      clientes(count),
-      emprestimos(count)
-    `).neq('email', ADMIN_EMAIL).order('created_at', { ascending: false }),
-  ])
+  const credores: CredorAdmin[] = MOCK ? [
+    { id: '1', nome: 'Carlos Mendes',   email: 'carlos@email.com',   plano: 'pro',     ciclo_plano: 'mensal', data_vencimento: new Date(Date.now() + 3  * 86400000).toISOString().split('T')[0], pagamento_confirmado: true,  ativo: true,  created_at: '2026-01-10', clientes: [{ count: 8  }], emprestimos: [{ count: 12 }] },
+    { id: '2', nome: 'Ana Paula',       email: 'ana@email.com',      plano: 'premium', ciclo_plano: 'anual',  data_vencimento: new Date(Date.now() + 180 * 86400000).toISOString().split('T')[0], pagamento_confirmado: true,  ativo: true,  created_at: '2026-02-05', clientes: [{ count: 24 }], emprestimos: [{ count: 38 }] },
+    { id: '3', nome: 'Roberto Lima',    email: 'roberto@email.com',  plano: 'free',    ciclo_plano: null,     data_vencimento: null,                                                              pagamento_confirmado: false, ativo: true,  created_at: '2026-03-18', clientes: [{ count: 3  }], emprestimos: [{ count: 4  }] },
+    { id: '4', nome: 'Fernanda Costa',  email: 'fernanda@email.com', plano: 'pro',     ciclo_plano: 'anual',  data_vencimento: new Date(Date.now() + 6  * 86400000).toISOString().split('T')[0], pagamento_confirmado: false, ativo: true,  created_at: '2026-03-22', clientes: [{ count: 15 }], emprestimos: [{ count: 21 }] },
+    { id: '5', nome: 'Marcos Oliveira', email: 'marcos@email.com',   plano: 'free',    ciclo_plano: null,     data_vencimento: null,                                                              pagamento_confirmado: false, ativo: false, created_at: '2026-04-01', clientes: [{ count: 0  }], emprestimos: [{ count: 0  }] },
+  ] : []
 
-  const totalEmprestado = emprestimosData?.reduce((s, e) => s + Number(e.valor_principal), 0) ?? 0
-  const emprestimosAtivos = emprestimosData?.filter(e => e.status === 'ativo').length ?? 0
+  const totalFree    = MOCK ? 2 : 0
+  const totalPro     = MOCK ? 2 : 0
+  const totalPremium = MOCK ? 1 : 0
+  const vencendoEm7  = MOCK ? 2 : 0
+  const emprestimosAtivos = MOCK ? 75 : 0
+  const totalCredores = MOCK ? 5 : 0
+
+  if (!MOCK) {
+    const admin = createAdminClient()
+    void admin
+  }
+  // --- fim MOCK ---
+
+  const receitaLicencas = credores
+    .filter(c => c.pagamento_confirmado)
+    .reduce((s, c) => s + precoPlano(c.plano, c.ciclo_plano), 0)
+
+  const kpis = [
+    { label: 'Total usuários', value: totalCredores },
+    { label: 'Free', value: totalFree ?? 0 },
+    { label: 'Pro', value: totalPro ?? 0 },
+    { label: 'Premium', value: totalPremium ?? 0 },
+    { label: 'Vencendo em 7 dias', value: vencendoEm7 ?? 0, alert: (vencendoEm7 ?? 0) > 0 },
+    { label: 'Empréstimos ativos', value: emprestimosAtivos },
+    { label: 'Receita de licenças', value: fmtMoeda(receitaLicencas) },
+  ]
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Admin FinFlow</h1>
-          <p className="text-muted-foreground">Visão geral da plataforma</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Admin FinFlow</h1>
+        <p className="text-muted-foreground">Visão geral da plataforma</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total credores</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCredores ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Credores ativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{creditoresAtivos ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Empréstimos ativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{emprestimosAtivos}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total emprestado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{fmtMoeda(totalEmprestado)}</div>
-          </CardContent>
-        </Card>
+        {kpis.map(k => (
+          <Card key={k.label}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{k.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${k.alert ? 'text-yellow-600' : ''}`}>{k.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div>
         <h2 className="text-lg font-semibold mb-4">Credores cadastrados</h2>
-        <AdminTable credores={(credores ?? []) as Parameters<typeof AdminTable>[0]['credores']} />
+        <AdminTable credores={(credores ?? []) as CredorAdmin[]} />
       </div>
     </div>
   )
