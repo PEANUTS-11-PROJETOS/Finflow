@@ -46,12 +46,12 @@ export function FormEmprestimo({ clientes }: Props) {
   const [tipo, setTipo] = useState<'price' | 'renovavel'>('price')
 
   const formPrice = useForm<PriceValues>({
-    resolver: zodResolver(schemaPrice) as Resolver<PriceValues>,
+    resolver: zodResolver(schemaPrice) as unknown as Resolver<PriceValues>,
     defaultValues: { tipo: 'price', cliente_id: '', observacoes: '' },
   })
 
   const formRenovavel = useForm<RenovavelValues>({
-    resolver: zodResolver(schemaRenovavel) as Resolver<RenovavelValues>,
+    resolver: zodResolver(schemaRenovavel) as unknown as Resolver<RenovavelValues>,
     defaultValues: { tipo: 'renovavel', cliente_id: '', observacoes: '' },
   })
 
