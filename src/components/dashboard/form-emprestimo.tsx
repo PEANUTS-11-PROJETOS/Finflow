@@ -132,26 +132,24 @@ export function FormEmprestimo({ clientes }: Props) {
         <FormField control={form.control as typeof formPrice.control} name="valor_principal" render={({ field }) => (
           <FormItem>
             <FormLabel>Valor principal (R$) *</FormLabel>
-            <FormControl>
-              <Input type="number" step="0.01" min="0" placeholder="1000.00"
-                name={field.name} ref={field.ref} onBlur={field.onBlur}
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            </FormControl>
+            <input type="number" step="0.01" min="0" placeholder="1000.00"
+              name={field.name} onBlur={field.onBlur}
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value)}
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            />
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control as typeof formPrice.control} name="taxa_juros" render={({ field }) => (
           <FormItem>
             <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
-            <FormControl>
-              <Input type="number" step="0.01" min="0" placeholder="5.00"
-                name={field.name} ref={field.ref} onBlur={field.onBlur}
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            </FormControl>
+            <input type="number" step="0.01" min="0" placeholder="5.00"
+              name={field.name} onBlur={field.onBlur}
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value)}
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            />
             <FormMessage />
           </FormItem>
         )} />
@@ -184,13 +182,12 @@ export function FormEmprestimo({ clientes }: Props) {
                 <FormField control={formPrice.control} name="num_parcelas" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Número de parcelas *</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="1" max="360" placeholder="12"
-                        name={field.name} ref={field.ref} onBlur={field.onBlur}
-                        value={field.value ?? ''}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    </FormControl>
+                    <input type="number" min="1" max="360" placeholder="12"
+                      name={field.name} onBlur={field.onBlur}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                    />
                     <FormMessage />
                   </FormItem>
                 )} />
