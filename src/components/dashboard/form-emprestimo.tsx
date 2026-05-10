@@ -129,7 +129,7 @@ export function FormEmprestimo({ clientes }: Props) {
               <FormField control={formPrice.control} name="cliente_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
                         <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
@@ -249,7 +249,7 @@ export function FormEmprestimo({ clientes }: Props) {
               <FormField control={formRenovavel.control} name="cliente_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
                         <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
