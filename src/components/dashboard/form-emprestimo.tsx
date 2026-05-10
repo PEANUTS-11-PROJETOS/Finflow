@@ -72,16 +72,24 @@ export function FormEmprestimo({ clientes }: Props) {
   const nomeClienteRenovavel = clientes.find(c => c.id === clienteIdRenovavel)?.nome
 
   async function onSubmitPrice(values: PriceValues) {
-    const result = await criarEmprestimo(values)
-    if (result?.error) { toast.error('Erro ao criar empréstimo'); return }
+    const result = await criarEmprestimo({ ...values, tipo: 'price' as const })
+    if (result?.error) {
+      const msg = typeof result.error === 'string' ? result.error : 'Verifique os campos e tente novamente.'
+      toast.error(msg)
+      return
+    }
     toast.success('Empréstimo criado!')
     router.push(`/emprestimos/${result.id}`)
     router.refresh()
   }
 
   async function onSubmitRenovavel(values: RenovavelValues) {
-    const result = await criarEmprestimo(values)
-    if (result?.error) { toast.error('Erro ao criar empréstimo'); return }
+    const result = await criarEmprestimo({ ...values, tipo: 'renovavel' as const })
+    if (result?.error) {
+      const msg = typeof result.error === 'string' ? result.error : 'Verifique os campos e tente novamente.'
+      toast.error(msg)
+      return
+    }
     toast.success('Empréstimo renovável criado!')
     router.push(`/emprestimos/${result.id}`)
     router.refresh()
