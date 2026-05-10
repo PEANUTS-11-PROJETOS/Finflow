@@ -129,16 +129,18 @@ export function FormEmprestimo({ clientes }: Props) {
               <FormField control={formPrice.control} name="cliente_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
-                          {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
-                        </span>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <select
+                    value={field.value}
+                    onChange={e => field.onChange(e.target.value)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    className={INPUT_CLS}
+                  >
+                    <option value="">Selecione o cliente</option>
+                    {clientes.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -249,16 +251,18 @@ export function FormEmprestimo({ clientes }: Props) {
               <FormField control={formRenovavel.control} name="cliente_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
-                          {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
-                        </span>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <select
+                    value={field.value}
+                    onChange={e => field.onChange(e.target.value)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    className={INPUT_CLS}
+                  >
+                    <option value="">Selecione o cliente</option>
+                    {clientes.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
                   <FormMessage />
                 </FormItem>
               )} />
