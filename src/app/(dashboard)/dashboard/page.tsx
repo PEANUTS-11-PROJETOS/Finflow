@@ -51,7 +51,7 @@ export default async function DashboardPage() {
 
   // Calcula juros ganhos: renovável usa valor_juros, price estima pela diferença
   const jurosGanhos = parcelasPagas?.reduce((sum, p) => {
-    const emp = p.emprestimos as { tipo: string; valor_principal: number; num_parcelas: number | null } | null
+    const emp = p.emprestimos as unknown as { tipo: string; valor_principal: number; num_parcelas: number | null } | null
     if (!emp) return sum
     if (emp.tipo === 'renovavel') return sum + Number(p.valor_juros ?? 0)
     const principalPorcao = emp.num_parcelas ? emp.valor_principal / emp.num_parcelas : 0
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
   }
 
   const vencHojeAgrupados = (vencimentosHoje ?? []).reduce<VencHoje[]>((acc, p) => {
-    const emp = p.emprestimos as { id: string; tipo: string; clientes: { id: string; nome: string } | null } | null
+    const emp = p.emprestimos as unknown as { id: string; tipo: string; clientes: { id: string; nome: string } | null } | null
     if (!emp?.clientes) return acc
     acc.push({
       clienteId: emp.clientes.id,
