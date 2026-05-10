@@ -119,6 +119,75 @@ export async function criarEmprestimo(data: EmprestimoInput) {
   }
 }
 
+// ─── Renovável: pagamento parcial → abate principal ──────────────────────────
+
+export async function pagarParcial(parcelaId: string, valorPago: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado' }
+
+  const { data: parcela } = await supabase
+    .from('parcelas')
+    .select('*, emprestimos(id, valor_principal, taxa_juros)')
+    .eq('id', parcelaId).eq('credor_id', user.id).single()
+
+  if (!parcela) return { error: 'Parcela não encontrada' }
+
+  const emp = parcela.emprestimos as { id: string; valor_principal: number; taxa_juros: number }
+  const valorJuros = Number(parcela.valor_juros ?? 0)
+
+  if (valorPago < valorJuros) return { error: `O valor pago deve cobrir pelo menos os juros de ${valorJuros}` }
+
+  const abatimento  = valorPago - valorJuros
+  const novoSaldo   = Number((Number(emp.valor_principal) - abatimento).toFixed(2))
+
+  if (novoSaldo <= 0) {
+    // Pagamento cobriu tudo — quitar
+    await supabase.from('parcelas')
+      .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0] })
+      .eq('id', parcelaId)
+    await supabase.from('emprestimos')
+      .update({ status: 'quitado' })
+      .eq('id', emp.id).eq('credor_id', user.id)
+    revalidatePath(`/emprestimos/${emp.id}`)
+    return { success: true, quitado: true }
+  }
+
+  // Marcar parcela como paga
+  const { error: e1 } = await supabase.from('parcelas')
+    .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0] })
+    .eq('id', parcelaId)
+  if (e1) return { error: e1.message }
+
+  // Atualizar saldo do empréstimo
+  await supabase.from('emprestimos')
+    .update({ valor_principal: novoSaldo })
+    .eq('id', emp.id).eq('credor_id', user.id)
+
+  // Próximo vencimento = 1 mês após o atual
+  const vencAtual = new Date(parcela.vencimento + 'T12:00:00')
+  const proxVenc  = new Date(vencAtual)
+  proxVenc.setMonth(proxVenc.getMonth() + 1)
+
+  const novoJuros  = Number((novoSaldo * (emp.taxa_juros / 100)).toFixed(2))
+  const { data: ultima } = await supabase.from('parcelas')
+    .select('numero').eq('emprestimo_id', parcela.emprestimo_id)
+    .order('numero', { ascending: false }).limit(1).single()
+
+  await supabase.from('parcelas').insert({
+    emprestimo_id: parcela.emprestimo_id,
+    credor_id: user.id,
+    numero: (ultima?.numero ?? 0) + 1,
+    valor: Number((novoSaldo + novoJuros).toFixed(2)),
+    valor_juros: novoJuros,
+    vencimento: proxVenc.toISOString().split('T')[0],
+  })
+
+  revalidatePath(`/emprestimos/${emp.id}`)
+  revalidatePath('/emprestimos')
+  return { success: true, quitado: false, novoSaldo, novoJuros }
+}
+
 // ─── Renovável: pagar só os juros → rola principal ────────────────────────────
 
 export async function pagarJuros(parcelaId: string) {
