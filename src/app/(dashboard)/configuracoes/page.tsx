@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PLANOS, trialDiasRestantes } from '@/lib/planos'
-import { Check, X } from 'lucide-react'
+import { Check, X, Download } from 'lucide-react'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -50,6 +50,37 @@ export default async function ConfiguracoesPage() {
           )}
         </CardContent>
       </Card>
+
+      {(plano === 'pro' || plano === 'premium') && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Exportar dados</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Baixe todos os seus dados em formato CSV para guardar uma cópia ou importar em outros sistemas.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/api/exportar/clientes"
+                download
+                className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Exportar clientes
+              </a>
+              <a
+                href="/api/exportar/emprestimos"
+                download
+                className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Exportar empréstimos e parcelas
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
