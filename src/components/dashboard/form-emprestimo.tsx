@@ -5,9 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { criarEmprestimo } from '@/app/(dashboard)/emprestimos/actions'
@@ -17,8 +16,6 @@ import type { Cliente } from '@/types'
 const INPUT_CLS = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
 const schemaPrice = z.object({
-  tipo:            z.literal('price'),
-  cliente_id:      z.string().min(1, 'Selecione um cliente'),
   valor_principal: z.coerce.number().positive('Informe o valor'),
   taxa_juros:      z.coerce.number().min(0),
   num_parcelas:    z.coerce.number().int().min(1).max(360),
@@ -27,8 +24,6 @@ const schemaPrice = z.object({
 })
 
 const schemaRenovavel = z.object({
-  tipo:            z.literal('renovavel'),
-  cliente_id:      z.string().min(1, 'Selecione um cliente'),
   valor_principal: z.coerce.number().positive('Informe o valor'),
   taxa_juros:      z.coerce.number().min(0),
   data_vencimento: z.string().min(1, 'Informe o vencimento'),
@@ -45,71 +40,78 @@ interface Props {
 export function FormEmprestimo({ clientes }: Props) {
   const router = useRouter()
   const [tipo, setTipo] = useState<'price' | 'renovavel'>('price')
+  const [clientePrice, setClientePrice] = useState('')
+  const [clienteRenovavel, setClienteRenovavel] = useState('')
 
   const formPrice = useForm<PriceValues>({
     resolver: zodResolver(schemaPrice) as unknown as Resolver<PriceValues>,
     defaultValues: {
-      tipo: 'price', cliente_id: '',
       valor_principal: '' as unknown as number,
-      taxa_juros: '' as unknown as number,
-      num_parcelas: '' as unknown as number,
-      data_inicio: '', observacoes: '',
+      taxa_juros:      '' as unknown as number,
+      num_parcelas:    '' as unknown as number,
+      data_inicio: '',
+      observacoes: '',
     },
   })
 
   const formRenovavel = useForm<RenovavelValues>({
     resolver: zodResolver(schemaRenovavel) as unknown as Resolver<RenovavelValues>,
     defaultValues: {
-      tipo: 'renovavel', cliente_id: '',
       valor_principal: '' as unknown as number,
-      taxa_juros: '' as unknown as number,
-      data_vencimento: '', observacoes: '',
+      taxa_juros:      '' as unknown as number,
+      data_vencimento: '',
+      observacoes: '',
     },
   })
 
-  // Prévia Price
-  const [vp, vt, vn, cidPrice] = useWatch({
-    control: formPrice.control,
-    name: ['valor_principal', 'taxa_juros', 'num_parcelas', 'cliente_id'],
-  })
+  const [vp, vt, vn] = useWatch({ control: formPrice.control, name: ['valor_principal', 'taxa_juros', 'num_parcelas'] })
   const valorParcelaPrice = (() => {
-    if (!vp || vp <= 0 || !vn || vn <= 0) return null
-    const t = (vt ?? 0) / 100
-    if (t === 0) return vp / vn
-    return (vp * t * Math.pow(1 + t, vn)) / (Math.pow(1 + t, vn) - 1)
+    if (!vp || Number(vp) <= 0 || !vn || Number(vn) <= 0) return null
+    const t = Number(vt ?? 0) / 100
+    if (t === 0) return Number(vp) / Number(vn)
+    return (Number(vp) * t * Math.pow(1 + t, Number(vn))) / (Math.pow(1 + t, Number(vn)) - 1)
   })()
 
-  // Prévia Renovável
-  const [rvp, rtr, cidRenovavel] = useWatch({
-    control: formRenovavel.control,
-    name: ['valor_principal', 'taxa_juros', 'cliente_id'],
-  })
+  const [rvp, rtr] = useWatch({ control: formRenovavel.control, name: ['valor_principal', 'taxa_juros'] })
   const jurosRenovavel = (rvp && Number(rvp) > 0 && rtr != null) ? Number(rvp) * (Number(rtr) / 100) : null
 
-  const nomeClientePrice     = clientes.find(c => c.id === cidPrice)?.nome
-  const nomeClienteRenovavel = clientes.find(c => c.id === cidRenovavel)?.nome
+  const nomeClientePrice     = clientes.find(c => c.id === clientePrice)?.nome
+  const nomeClienteRenovavel = clientes.find(c => c.id === clienteRenovavel)?.nome
 
   async function onSubmitPrice(values: PriceValues) {
-    const result = await criarEmprestimo({ ...values, tipo: 'price' as const })
-    if (result?.error) {
-      toast.error(typeof result.error === 'string' ? result.error : 'Verifique os campos.')
-      return
-    }
+    if (!clientePrice) { toast.error('Selecione um cliente'); return }
+    const result = await criarEmprestimo({ ...values, tipo: 'price' as const, cliente_id: clientePrice })
+    if (result?.error) { toast.error(typeof result.error === 'string' ? result.error : 'Verifique os campos.'); return }
     toast.success('Empréstimo criado!')
     router.push(`/emprestimos/${result.id}`)
     router.refresh()
   }
 
   async function onSubmitRenovavel(values: RenovavelValues) {
-    const result = await criarEmprestimo({ ...values, tipo: 'renovavel' as const })
-    if (result?.error) {
-      toast.error(typeof result.error === 'string' ? result.error : 'Verifique os campos.')
-      return
-    }
+    if (!clienteRenovavel) { toast.error('Selecione um cliente'); return }
+    const result = await criarEmprestimo({ ...values, tipo: 'renovavel' as const, cliente_id: clienteRenovavel })
+    if (result?.error) { toast.error(typeof result.error === 'string' ? result.error : 'Verifique os campos.'); return }
     toast.success('Empréstimo renovável criado!')
     router.push(`/emprestimos/${result.id}`)
     router.refresh()
   }
+
+  const SelectCliente = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">Cliente *</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className={INPUT_CLS}
+      >
+        <option value="">Selecione o cliente</option>
+        {clientes.map(c => (
+          <option key={c.id} value={c.id}>{c.nome}</option>
+        ))}
+      </select>
+      {!value && <p className="text-sm font-medium text-destructive hidden" />}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -123,33 +125,69 @@ export function FormEmprestimo({ clientes }: Props) {
       {/* ── TABELA PRICE ── */}
       {tipo === 'price' && (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          <Form {...formPrice}>
-            <form onSubmit={formPrice.handleSubmit(onSubmitPrice)} className="space-y-4">
+          <div className="space-y-4">
+            <SelectCliente value={clientePrice} onChange={setClientePrice} />
 
-              <FormField control={formPrice.control} name="cliente_id" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente *</FormLabel>
-                  <select
-                    value={field.value}
-                    onChange={e => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    className={INPUT_CLS}
-                  >
-                    <option value="">Selecione o cliente</option>
-                    {clientes.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
-                    ))}
-                  </select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+            <Form {...formPrice}>
+              <form onSubmit={formPrice.handleSubmit(onSubmitPrice)} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={formPrice.control} name="valor_principal" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor principal (R$) *</FormLabel>
+                      <input type="number" step="0.01" min="0" placeholder="1000.00"
+                        name={field.name} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={formPrice.control} name="taxa_juros" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
+                      <input type="number" step="0.01" min="0" placeholder="5.00"
+                        name={field.name} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField control={formPrice.control} name="valor_principal" render={({ field }) => (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={formPrice.control} name="num_parcelas" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de parcelas *</FormLabel>
+                      <input type="number" min="1" max="360" placeholder="12"
+                        name={field.name} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={formPrice.control} name="data_inicio" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data de início *</FormLabel>
+                      <input type="date"
+                        name={field.name} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
+                <FormField control={formPrice.control} name="observacoes" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor principal (R$) *</FormLabel>
-                    <input type="number" step="0.01" min="0" placeholder="1000.00"
+                    <FormLabel>Observações</FormLabel>
+                    <input type="text" placeholder="Anotações..."
                       name={field.name} onBlur={field.onBlur}
                       value={field.value ?? ''}
                       onChange={e => field.onChange(e.target.value)}
@@ -158,68 +196,16 @@ export function FormEmprestimo({ clientes }: Props) {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={formPrice.control} name="taxa_juros" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
-                    <input type="number" step="0.01" min="0" placeholder="5.00"
-                      name={field.name} onBlur={field.onBlur}
-                      value={field.value ?? ''}
-                      onChange={e => field.onChange(e.target.value)}
-                      className={INPUT_CLS}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField control={formPrice.control} name="num_parcelas" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número de parcelas *</FormLabel>
-                    <input type="number" min="1" max="360" placeholder="12"
-                      name={field.name} onBlur={field.onBlur}
-                      value={field.value ?? ''}
-                      onChange={e => field.onChange(e.target.value)}
-                      className={INPUT_CLS}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={formPrice.control} name="data_inicio" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de início *</FormLabel>
-                    <input type="date"
-                      name={field.name} onBlur={field.onBlur}
-                      value={field.value ?? ''}
-                      onChange={e => field.onChange(e.target.value)}
-                      className={INPUT_CLS}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-
-              <FormField control={formPrice.control} name="observacoes" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações</FormLabel>
-                  <input type="text" placeholder="Anotações..."
-                    name={field.name} onBlur={field.onBlur}
-                    value={field.value ?? ''}
-                    onChange={e => field.onChange(e.target.value)}
-                    className={INPUT_CLS}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={formPrice.formState.isSubmitting}>
-                  {formPrice.formState.isSubmitting ? 'Criando...' : 'Criar empréstimo'}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
-              </div>
-            </form>
-          </Form>
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" disabled={formPrice.formState.isSubmitting}>
+                    {formPrice.formState.isSubmitting ? 'Criando...' : 'Criar empréstimo'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
+                </div>
+              </form>
+            </Form>
+          </div>
 
           <Card className="h-fit">
             <CardContent className="pt-6 space-y-3">
@@ -245,33 +231,42 @@ export function FormEmprestimo({ clientes }: Props) {
       {/* ── RENOVÁVEL ── */}
       {tipo === 'renovavel' && (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          <Form {...formRenovavel}>
-            <form onSubmit={formRenovavel.handleSubmit(onSubmitRenovavel)} className="space-y-4">
+          <div className="space-y-4">
+            <SelectCliente value={clienteRenovavel} onChange={setClienteRenovavel} />
 
-              <FormField control={formRenovavel.control} name="cliente_id" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente *</FormLabel>
-                  <select
-                    value={field.value}
-                    onChange={e => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    className={INPUT_CLS}
-                  >
-                    <option value="">Selecione o cliente</option>
-                    {clientes.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
-                    ))}
-                  </select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+            <Form {...formRenovavel}>
+              <form onSubmit={formRenovavel.handleSubmit(onSubmitRenovavel)} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={formRenovavel.control} name="valor_principal" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor principal (R$) *</FormLabel>
+                      <input type="number" step="0.01" min="0" placeholder="1000.00"
+                        name={field.name} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={formRenovavel.control} name="taxa_juros" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
+                      <input type="number" step="0.01" min="0" placeholder="5.00"
+                        name={field.name} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField control={formRenovavel.control} name="valor_principal" render={({ field }) => (
+                <FormField control={formRenovavel.control} name="data_vencimento" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor principal (R$) *</FormLabel>
-                    <input type="number" step="0.01" min="0" placeholder="1000.00"
+                    <FormLabel>Data do primeiro vencimento *</FormLabel>
+                    <input type="date"
                       name={field.name} onBlur={field.onBlur}
                       value={field.value ?? ''}
                       onChange={e => field.onChange(e.target.value)}
@@ -280,10 +275,11 @@ export function FormEmprestimo({ clientes }: Props) {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={formRenovavel.control} name="taxa_juros" render={({ field }) => (
+
+                <FormField control={formRenovavel.control} name="observacoes" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
-                    <input type="number" step="0.01" min="0" placeholder="5.00"
+                    <FormLabel>Observações</FormLabel>
+                    <input type="text" placeholder="Anotações..."
                       name={field.name} onBlur={field.onBlur}
                       value={field.value ?? ''}
                       onChange={e => field.onChange(e.target.value)}
@@ -292,42 +288,16 @@ export function FormEmprestimo({ clientes }: Props) {
                     <FormMessage />
                   </FormItem>
                 )} />
-              </div>
 
-              <FormField control={formRenovavel.control} name="data_vencimento" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data do primeiro vencimento *</FormLabel>
-                  <input type="date"
-                    name={field.name} onBlur={field.onBlur}
-                    value={field.value ?? ''}
-                    onChange={e => field.onChange(e.target.value)}
-                    className={INPUT_CLS}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={formRenovavel.control} name="observacoes" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações</FormLabel>
-                  <input type="text" placeholder="Anotações..."
-                    name={field.name} onBlur={field.onBlur}
-                    value={field.value ?? ''}
-                    onChange={e => field.onChange(e.target.value)}
-                    className={INPUT_CLS}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={formRenovavel.formState.isSubmitting}>
-                  {formRenovavel.formState.isSubmitting ? 'Criando...' : 'Criar empréstimo'}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
-              </div>
-            </form>
-          </Form>
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" disabled={formRenovavel.formState.isSubmitting}>
+                    {formRenovavel.formState.isSubmitting ? 'Criando...' : 'Criar empréstimo'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
+                </div>
+              </form>
+            </Form>
+          </div>
 
           <Card className="h-fit">
             <CardContent className="pt-6 space-y-3">
