@@ -1,8 +1,32 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { calcularParcelas } from '@/lib/utils'
+
+export async function criarEmprestimoAction(formData: FormData) {
+  const tipo = formData.get('tipo') as string
+  const cliente_id = (formData.get('cliente_id') as string) ?? ''
+  const valor_principal = formData.get('valor_principal') as string
+  const taxa_juros = formData.get('taxa_juros') as string
+  const observacoes = (formData.get('observacoes') as string) || undefined
+
+  if (!cliente_id) redirect(`/emprestimos/novo?tipo=${tipo}&erro=Selecione+um+cliente`)
+
+  if (tipo === 'price') {
+    const num_parcelas = formData.get('num_parcelas') as string
+    const data_inicio  = formData.get('data_inicio') as string
+    const result = await criarEmprestimo({ tipo: 'price', cliente_id, valor_principal: Number(valor_principal), taxa_juros: Number(taxa_juros), num_parcelas: Number(num_parcelas), data_inicio, observacoes })
+    if (result.error) redirect(`/emprestimos/novo?tipo=price&erro=${encodeURIComponent(typeof result.error === 'string' ? result.error : 'Erro ao criar')}`)
+    redirect(`/emprestimos/${result.id}`)
+  } else {
+    const data_vencimento = formData.get('data_vencimento') as string
+    const result = await criarEmprestimo({ tipo: 'renovavel', cliente_id, valor_principal: Number(valor_principal), taxa_juros: Number(taxa_juros), data_vencimento, observacoes })
+    if (result.error) redirect(`/emprestimos/novo?tipo=renovavel&erro=${encodeURIComponent(typeof result.error === 'string' ? result.error : 'Erro ao criar')}`)
+    redirect(`/emprestimos/${result.id}`)
+  }
+}
 
 // ─── Tabela Price ──────────────────────────────────────────────────────────────
 
