@@ -28,8 +28,8 @@ export async function GET() {
   ]
 
   for (const e of emprestimos ?? []) {
-    const cliente = (e.clientes as { nome: string } | null)?.nome ?? ''
-    const parcelas = (e.parcelas as {
+    const cliente = (e.clientes as unknown as { nome: string } | null)?.nome ?? ''
+    const parcelas = (e.parcelas as unknown as {
       numero: number; valor: number; valor_juros: number | null;
       vencimento: string; pago: boolean; rolado: boolean; data_pagamento: string | null
     }[]) ?? []
