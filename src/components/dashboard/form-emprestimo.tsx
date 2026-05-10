@@ -96,23 +96,6 @@ export function FormEmprestimo({ clientes }: Props) {
     router.refresh()
   }
 
-  const SelectCliente = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">Cliente *</label>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className={INPUT_CLS}
-      >
-        <option value="">Selecione o cliente</option>
-        {clientes.map(c => (
-          <option key={c.id} value={c.id}>{c.nome}</option>
-        ))}
-      </select>
-      {!value && <p className="text-sm font-medium text-destructive hidden" />}
-    </div>
-  )
-
   return (
     <div className="space-y-6">
       <Tabs value={tipo} onValueChange={v => setTipo(v as 'price' | 'renovavel')}>
@@ -126,7 +109,13 @@ export function FormEmprestimo({ clientes }: Props) {
       {tipo === 'price' && (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div className="space-y-4">
-            <SelectCliente value={clientePrice} onChange={setClientePrice} />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cliente *</label>
+              <select value={clientePrice} onChange={e => setClientePrice(e.target.value)} className={INPUT_CLS}>
+                <option value="">Selecione o cliente</option>
+                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
 
             <Form {...formPrice}>
               <form onSubmit={formPrice.handleSubmit(onSubmitPrice)} className="space-y-4">
@@ -232,7 +221,13 @@ export function FormEmprestimo({ clientes }: Props) {
       {tipo === 'renovavel' && (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div className="space-y-4">
-            <SelectCliente value={clienteRenovavel} onChange={setClienteRenovavel} />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cliente *</label>
+              <select value={clienteRenovavel} onChange={e => setClienteRenovavel(e.target.value)} className={INPUT_CLS}>
+                <option value="">Selecione o cliente</option>
+                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
 
             <Form {...formRenovavel}>
               <form onSubmit={formRenovavel.handleSubmit(onSubmitRenovavel)} className="space-y-4">
