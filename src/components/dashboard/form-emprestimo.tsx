@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
@@ -130,11 +130,13 @@ export function FormEmprestimo({ clientes }: Props) {
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
-                        {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
-                      </span>
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger>
+                        <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
+                          {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
+                        </span>
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
                   </Select>
                   <FormMessage />
@@ -248,11 +250,13 @@ export function FormEmprestimo({ clientes }: Props) {
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
-                        {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
-                      </span>
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger>
+                        <span className={field.value ? '' : 'text-muted-foreground text-sm'}>
+                          {field.value ? clientes.find(c => c.id === field.value)?.nome : 'Selecione o cliente'}
+                        </span>
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
                   </Select>
                   <FormMessage />
