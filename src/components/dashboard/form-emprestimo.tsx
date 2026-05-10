@@ -47,12 +47,27 @@ export function FormEmprestimo({ clientes }: Props) {
 
   const formPrice = useForm<PriceValues>({
     resolver: zodResolver(schemaPrice) as unknown as Resolver<PriceValues>,
-    defaultValues: { tipo: 'price', cliente_id: '', observacoes: '' },
+    defaultValues: {
+      tipo: 'price',
+      cliente_id: '',
+      valor_principal: '' as unknown as number,
+      taxa_juros: '' as unknown as number,
+      num_parcelas: '' as unknown as number,
+      data_inicio: '',
+      observacoes: '',
+    },
   })
 
   const formRenovavel = useForm<RenovavelValues>({
     resolver: zodResolver(schemaRenovavel) as unknown as Resolver<RenovavelValues>,
-    defaultValues: { tipo: 'renovavel', cliente_id: '', observacoes: '' },
+    defaultValues: {
+      tipo: 'renovavel',
+      cliente_id: '',
+      valor_principal: '' as unknown as number,
+      taxa_juros: '' as unknown as number,
+      data_vencimento: '',
+      observacoes: '',
+    },
   })
 
   // Prévia Price
@@ -117,14 +132,26 @@ export function FormEmprestimo({ clientes }: Props) {
         <FormField control={form.control as typeof formPrice.control} name="valor_principal" render={({ field }) => (
           <FormItem>
             <FormLabel>Valor principal (R$) *</FormLabel>
-            <FormControl><Input type="number" step="0.01" min="0" placeholder="1000.00" {...field} /></FormControl>
+            <FormControl>
+              <Input type="number" step="0.01" min="0" placeholder="1000.00"
+                name={field.name} ref={field.ref} onBlur={field.onBlur}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control as typeof formPrice.control} name="taxa_juros" render={({ field }) => (
           <FormItem>
             <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
-            <FormControl><Input type="number" step="0.01" min="0" placeholder="5.00" {...field} /></FormControl>
+            <FormControl>
+              <Input type="number" step="0.01" min="0" placeholder="5.00"
+                name={field.name} ref={field.ref} onBlur={field.onBlur}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )} />
@@ -157,7 +184,13 @@ export function FormEmprestimo({ clientes }: Props) {
                 <FormField control={formPrice.control} name="num_parcelas" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Número de parcelas *</FormLabel>
-                    <FormControl><Input type="number" min="1" max="360" placeholder="12" {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="number" min="1" max="360" placeholder="12"
+                        name={field.name} ref={field.ref} onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
