@@ -26,8 +26,8 @@ export function DashboardShell({
       {/* Sidebar — fixo no mobile, estático no desktop */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-30 transition-transform duration-300 ease-in-out md:static md:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-30 transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:pointer-events-auto',
+          open ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'
         )}
       >
         <Sidebar onClose={() => setOpen(false)} />
