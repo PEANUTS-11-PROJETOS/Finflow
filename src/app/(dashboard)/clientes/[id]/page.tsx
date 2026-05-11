@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { FormCliente } from '@/components/dashboard/form-cliente'
 import { EmprestimosTable } from '@/components/dashboard/emprestimos-table'
+import { DocumentosCliente } from '@/components/dashboard/documentos-cliente'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import type { Emprestimo } from '@/types'
@@ -15,9 +16,10 @@ export default async function ClienteDetalhePage({ params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: cliente }, { data: emprestimos }] = await Promise.all([
+  const [{ data: cliente }, { data: emprestimos }, { data: documentos }] = await Promise.all([
     supabase.from('clientes').select('*').eq('id', id).eq('credor_id', user.id).single(),
     supabase.from('emprestimos').select('*, clientes(id, nome)').eq('cliente_id', id).order('created_at', { ascending: false }),
+    supabase.from('documentos_clientes').select('*').eq('cliente_id', id).order('created_at'),
   ])
 
   if (!cliente) notFound()
@@ -46,6 +48,17 @@ export default async function ClienteDetalhePage({ params }: { params: Promise<{
       <div>
         <h2 className="text-lg font-medium mb-4">Editar dados</h2>
         <FormCliente cliente={cliente} />
+      </div>
+
+      <Separator />
+
+      <div>
+        <h2 className="text-lg font-medium mb-4">Documentos</h2>
+        <DocumentosCliente
+          clienteId={id}
+          credorId={user.id}
+          documentosIniciais={(documentos ?? []) as { id: string; tipo: string; nome: string; storage_path: string; created_at: string }[]}
+        />
       </div>
 
       <Separator />
