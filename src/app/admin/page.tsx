@@ -7,6 +7,7 @@ import { fmtMoeda } from '@/lib/utils'
 import { precoPlano } from '@/lib/planos'
 
 const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
+const TEST_EMAIL = 'soaresvinicius1112@gmail.com'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -15,19 +16,19 @@ export default async function AdminPage() {
 
   const admin = createAdminClient()
 
-  const [
-    { data: credores },
-    { data: emprestimosData },
-  ] = await Promise.all([
-    admin
-      .from('credores')
-      .select(`id, nome, email, plano, ciclo_plano, data_vencimento, pagamento_confirmado, ativo, created_at, clientes(count), emprestimos(count)`)
-      .neq('email', ADMIN_EMAIL)
-      .order('created_at', { ascending: false }),
-    admin.from('emprestimos').select('status'),
-  ])
+  const { data: credores } = await admin
+    .from('credores')
+    .select(`id, nome, email, plano, ciclo_plano, data_vencimento, pagamento_confirmado, ativo, created_at, clientes(count), emprestimos(count)`)
+    .neq('email', ADMIN_EMAIL)
+    .neq('email', TEST_EMAIL)
+    .order('created_at', { ascending: false })
 
   const lista = (credores ?? []) as CredorAdmin[]
+  const credorIds = lista.map(c => c.id)
+
+  const { data: emprestimosData } = credorIds.length > 0
+    ? await admin.from('emprestimos').select('status').in('credor_id', credorIds)
+    : { data: [] }
 
   const hoje = new Date()
   const em7 = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0]
@@ -49,7 +50,7 @@ export default async function AdminPage() {
     { label: 'Premium',             value: totalPremium },
     { label: 'Vencendo em 7 dias',  value: vencendoEm7, alert: vencendoEm7 > 0 },
     { label: 'Empréstimos ativos',  value: emprestimosAtivos },
-    { label: 'Receita de licenças', value: fmtMoeda(receitaLicencas) },
+    { label: 'Receita de licenças', value: fmtMoeda(receitaLicencas / 100) },
   ]
 
   return (
