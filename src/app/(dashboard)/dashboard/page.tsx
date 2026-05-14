@@ -1,9 +1,11 @@
+// src/app/(dashboard)/dashboard/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { fmtMoeda, fmtData } from '@/lib/utils'
-import { Users, HandCoins, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react'
+import { Money } from '@/components/ui/money'
+import { fmtData } from '@/lib/utils'
+import { Users, HandCoins, AlertTriangle, TrendingUp, Calendar, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -20,36 +22,24 @@ export default async function DashboardPage() {
     { data: parcelasPagas },
     { data: vencimentosHoje },
   ] = await Promise.all([
-    supabase
-      .from('clientes')
-      .select('*', { count: 'exact', head: true })
-      .eq('ativo', true),
-    supabase
-      .from('emprestimos')
-      .select('valor_principal, status')
-      .eq('status', 'ativo'),
-    supabase
-      .from('parcelas')
-      .select('valor')
-      .eq('pago', false)
-      .eq('rolado', false)
-      .lt('vencimento', hoje),
-    supabase
-      .from('parcelas')
-      .select('valor, valor_juros, emprestimos(tipo, valor_principal, num_parcelas)')
-      .eq('pago', true),
-    supabase
-      .from('parcelas')
-      .select('id, valor, vencimento, emprestimos(id, tipo, clientes(id, nome))')
-      .eq('vencimento', hoje)
-      .eq('pago', false)
-      .eq('rolado', false),
+    supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('ativo', true),
+    supabase.from('emprestimos').select('valor_principal, tipo, status').eq('status', 'ativo'),
+    supabase.from('parcelas').select('valor').eq('pago', false).eq('rolado', false).lt('vencimento', hoje),
+    supabase.from('parcelas').select('valor, valor_juros, emprestimos(tipo, valor_principal, num_parcelas)').eq('pago', true),
+    supabase.from('parcelas').select('id, valor, vencimento, emprestimos(id, tipo, clientes(id, nome))')
+      .eq('vencimento', hoje).eq('pago', false).eq('rolado', false),
   ])
 
+  // Totais
   const totalEmprestado = emprestimos?.reduce((s, e) => s + Number(e.valor_principal), 0) ?? 0
   const totalVencido    = parcelasVencidas?.reduce((s, p) => s + Number(p.valor), 0) ?? 0
+  const totalHoje       = vencimentosHoje?.reduce((s, p) => s + Number(p.valor), 0) ?? 0
 
-  // Calcula juros ganhos: renovável usa valor_juros, price estima pela diferença
+  // Composição da carteira
+  const carteiraRenovavel = emprestimos?.filter(e => e.tipo === 'renovavel').reduce((s, e) => s + Number(e.valor_principal), 0) ?? 0
+  const carteiraPrice     = emprestimos?.filter(e => e.tipo === 'price').reduce((s, e) => s + Number(e.valor_principal), 0) ?? 0
+
+  // Juros ganhos
   const jurosGanhos = parcelasPagas?.reduce((sum, p) => {
     const emp = p.emprestimos as unknown as { tipo: string; valor_principal: number; num_parcelas: number | null } | null
     if (!emp) return sum
@@ -58,78 +48,142 @@ export default async function DashboardPage() {
     return sum + Math.max(0, Number(p.valor) - principalPorcao)
   }, 0) ?? 0
 
-  const cards = [
-    { title: 'Clientes ativos',    value: String(totalClientes ?? 0),       icon: Users,          desc: 'cadastrados' },
-    { title: 'Empréstimos ativos', value: String(emprestimos?.length ?? 0), icon: HandCoins,      desc: 'em aberto' },
-    { title: 'Total emprestado',   value: fmtMoeda(totalEmprestado),        icon: TrendingUp,     desc: 'em carteira' },
-    { title: 'Juros ganhos',       value: fmtMoeda(jurosGanhos),            icon: DollarSign,     desc: 'já recebidos', highlight: jurosGanhos > 0 },
-    { title: 'Parcelas vencidas',  value: fmtMoeda(totalVencido),           icon: AlertTriangle,  desc: 'a cobrar', danger: totalVencido > 0 },
-  ]
-
-  // Agrupa vencimentos de hoje por cliente
-  type VencHoje = {
-    clienteId: string
-    clienteNome: string
-    empId: string
-    tipo: string
-    valor: number
-  }
-
+  // Cobranças de hoje agrupadas
+  type VencHoje = { clienteId: string; clienteNome: string; empId: string; tipo: string; valor: number }
   const vencHojeAgrupados = (vencimentosHoje ?? []).reduce<VencHoje[]>((acc, p) => {
     const emp = p.emprestimos as unknown as { id: string; tipo: string; clientes: { id: string; nome: string } | null } | null
     if (!emp?.clientes) return acc
-    acc.push({
-      clienteId: emp.clientes.id,
-      clienteNome: emp.clientes.nome,
-      empId: emp.id,
-      tipo: emp.tipo,
-      valor: Number(p.valor),
-    })
+    acc.push({ clienteId: emp.clientes.id, clienteNome: emp.clientes.nome, empId: emp.id, tipo: emp.tipo, valor: Number(p.valor) })
     return acc
   }, [])
 
-  return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+  const dataExtenso = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  })
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {cards.map(({ title, value, icon: Icon, desc, danger, highlight }) => (
-          <Card key={title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-              <Icon className={`h-4 w-4 ${danger ? 'text-destructive' : highlight ? 'text-green-600' : 'text-muted-foreground'}`} />
-            </CardHeader>
-            <CardContent>
-              <p className={`text-2xl font-bold ${danger ? 'text-destructive' : highlight ? 'text-green-600' : ''}`}>{value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+  const kpis = [
+    { label: 'Carteira ativa',  value: totalEmprestado, sub: `${emprestimos?.length ?? 0} ativos`,          tone: 'default' as const },
+    { label: 'Juros ganhos',    value: jurosGanhos,     sub: 'acumulado',                                    tone: 'success' as const, dot: 'var(--success)' },
+    { label: 'A receber hoje',  value: totalHoje,       sub: `${vencHojeAgrupados.length} cobranças`,        tone: 'default' as const, dot: 'var(--warning)' },
+    { label: 'Em atraso',       value: totalVencido,    sub: `${parcelasVencidas?.length ?? 0} vencidas`,    tone: 'danger' as const,  dot: 'var(--destructive)' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl">Painel</h1>
+        <p className="text-sm text-muted-foreground mt-1 first-letter:uppercase">{dataExtenso} · visão geral da carteira</p>
+      </div>
+
+      {/* HERO — Carteira ativa */}
+      <Card className="p-7">
+        <CardContent className="p-0 space-y-5">
+          <div>
+            <p className="eyebrow">Carteira ativa</p>
+            <div className="flex items-baseline gap-3 mt-2 flex-wrap">
+              <span className="leading-none text-5xl"><Money value={totalEmprestado} display /></span>
+              <Badge variant="secondary" className="gap-1.5 bg-[var(--success)]/10 text-[var(--success)] border-transparent">
+                <TrendingUp className="h-3 w-3" /> em carteira
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-3 max-w-xl">
+              Total emprestado em <b className="text-foreground">{emprestimos?.length ?? 0} empréstimos ativos</b> distribuídos
+              entre <b className="text-foreground">{totalClientes ?? 0} clientes</b>.
+            </p>
+          </div>
+
+          {/* Composição */}
+          {totalEmprestado > 0 && (
+            <div>
+              <p className="eyebrow mb-2">Composição</p>
+              <div className="flex h-2.5 gap-0.5 rounded-full overflow-hidden">
+                <div className="bg-foreground"        style={{ flex: carteiraRenovavel }} />
+                <div className="bg-[var(--success)]"  style={{ flex: carteiraPrice }} />
+                <div className="bg-destructive"       style={{ flex: totalVencido || 0.001 }} />
+              </div>
+              <div className="flex gap-5 mt-2.5 text-xs flex-wrap">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
+                  Renováveis · <Money value={carteiraRenovavel} tone="muted" />
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+                  Tabela Price · <Money value={carteiraPrice} tone="muted" />
+                </span>
+                {totalVencido > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                    Inadimplente · <Money value={totalVencido} tone="muted" />
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* KPIs */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="eyebrow">Clientes ativos</span>
+            </div>
+            <p className="text-3xl font-mono mt-3">{totalClientes ?? 0}</p>
+            <p className="text-xs text-muted-foreground mt-1.5">cadastrados</p>
+          </CardContent>
+        </Card>
+
+        {kpis.slice(1).map(k => (
+          <Card key={k.label}>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: k.dot }} />
+                <span className="eyebrow">{k.label}</span>
+              </div>
+              <p className="text-3xl mt-3"><Money value={k.value} tone={k.tone} /></p>
+              <p className="text-xs text-muted-foreground mt-1.5">{k.sub}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Vencimentos de hoje */}
+      {/* Cobranças de hoje */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Vencimentos hoje</h2>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-lg">Cobranças de hoje</h2>
+          {vencHojeAgrupados.length > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              <Calendar className="h-3 w-3" />{fmtData(hoje)}
+            </Badge>
+          )}
+        </div>
+
         {vencHojeAgrupados.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma parcela vence hoje.</p>
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              Nenhuma parcela vence hoje. ☕
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-2">
             {vencHojeAgrupados.map((v, i) => (
-              <Link
-                key={i}
-                href={`/emprestimos/${v.empId}`}
-                className="flex items-center justify-between rounded-lg border bg-background px-4 py-3 hover:bg-muted transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div>
-                    <p className="text-sm font-medium">{v.clienteNome}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{v.tipo === 'price' ? 'Tabela Price' : 'Renovável'}</p>
-                  </div>
+              <Link key={i} href={`/emprestimos/${v.empId}`}
+                className="flex items-center gap-4 rounded-xl border bg-card px-4 py-3.5 hover:border-foreground/40 transition-colors">
+                <div className="w-9 h-9 rounded-full bg-muted text-foreground/80 flex items-center justify-center text-xs font-semibold flex-none">
+                  {v.clienteNome.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">{fmtMoeda(v.valor)}</span>
-                  <Badge variant="secondary">Vence hoje</Badge>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{v.clienteNome}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {v.tipo === 'price' ? 'Tabela Price' : 'Renovável'} · vence hoje
+                  </p>
                 </div>
+                <div className="text-right">
+                  <p className="text-sm"><Money value={v.valor} /></p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground flex-none" />
               </Link>
             ))}
           </div>

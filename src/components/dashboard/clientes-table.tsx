@@ -1,9 +1,10 @@
+// src/components/dashboard/clientes-table.tsx
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { MoreHorizontal, Eye, UserX } from 'lucide-react'
+import { MoreHorizontal, Eye, UserX, Search } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { desativarCliente } from '@/app/(dashboard)/clientes/actions'
+import { avatarColor, iniciais } from '@/lib/avatar-color'
 import type { Cliente } from '@/types'
 
 interface Props {
@@ -33,32 +35,30 @@ export function ClientesTable({ clientes }: Props) {
     startTransition(async () => {
       const result = await desativarCliente(id)
       setConfirmId(null)
-      if (result?.error) {
-        toast.error('Erro ao desativar cliente')
-      } else {
-        toast.success('Cliente desativado')
-        router.refresh()
-      }
+      if (result?.error) toast.error('Erro ao desativar cliente')
+      else { toast.success('Cliente desativado'); router.refresh() }
     })
   }
 
   return (
     <>
-      <Input
-        placeholder="Buscar por nome, CPF ou telefone..."
-        value={busca}
-        onChange={e => setBusca(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="relative max-w-sm">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome, CPF ou telefone…"
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          className="pl-10 h-10"
+        />
+      </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-xl border bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>CPF</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Email</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Cliente</TableHead>
+              <TableHead>Contato</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-12" />
             </TableRow>
@@ -66,21 +66,41 @@ export function ClientesTable({ clientes }: Props) {
           <TableBody>
             {filtrados.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
                   Nenhum cliente encontrado.
                 </TableCell>
               </TableRow>
             )}
             {filtrados.map(c => (
               <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.nome}</TableCell>
-                <TableCell className="text-muted-foreground">{c.cpf ?? '—'}</TableCell>
-                <TableCell className="text-muted-foreground">{c.telefone ?? '—'}</TableCell>
-                <TableCell className="text-muted-foreground">{c.email ?? '—'}</TableCell>
                 <TableCell>
-                  <Badge variant={c.ativo ? 'default' : 'secondary'}>
-                    {c.ativo ? 'Ativo' : 'Inativo'}
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-foreground shrink-0"
+                      style={{ background: avatarColor(c.nome) }}
+                    >
+                      {iniciais(c.nome)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{c.nome}</p>
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">{c.cpf ?? '—'}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="font-mono text-sm">{c.telefone ?? '—'}</span>
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground truncate max-w-[240px]">
+                  {c.email ?? '—'}
+                </TableCell>
+                <TableCell>
+                  {c.ativo ? (
+                    <Badge variant="secondary" className="gap-1.5 bg-[var(--success)]/10 text-[var(--success)] border-transparent">
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" /> Ativo
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Inativo</Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>

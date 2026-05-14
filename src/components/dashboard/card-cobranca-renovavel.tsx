@@ -1,17 +1,20 @@
+// src/components/dashboard/card-cobranca-renovavel.tsx
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, RefreshCw, AlertTriangle, SplitSquareHorizontal } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CheckCircle2, RefreshCw, AlertTriangle, SplitSquareHorizontal, Calendar } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Money } from '@/components/ui/money'
 import { pagarJuros, pagarTudo, pagarParcial } from '@/app/(dashboard)/emprestimos/actions'
 import { fmtMoeda, fmtData } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { Parcela } from '@/types'
 
-const INPUT_CLS = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+const INPUT_CLS =
+  'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/10'
 
 interface Props {
   parcelaAberta: Parcela
@@ -28,18 +31,15 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
   const hoje       = new Date().toISOString().split('T')[0]
   const vencida    = parcelaAberta.vencimento < hoje
   const valorJuros = Number(parcelaAberta.valor_juros ?? 0)
+  const total      = Number(parcelaAberta.valor)
 
-  // Cálculo em tempo real do pagamento parcial
+  // Cálculo em tempo real do pagamento parcial (lógica intacta)
   const vp         = parseFloat(valorPago) || 0
   const abatimento = Math.max(0, vp - valorJuros)
   const novoSaldo  = Math.max(0, valorPrincipal - abatimento)
-  const novoJuros  = Number((novoSaldo * (Number(parcelaAberta.valor_juros ?? 0) / valorPrincipal * valorPrincipal / valorPrincipal)).toFixed(2))
-
-  // Calcula taxa implícita para projeção do próximo ciclo
-  const taxa        = valorPrincipal > 0 ? valorJuros / valorPrincipal : 0
-  const proxJuros   = Number((novoSaldo * taxa).toFixed(2))
-  const proxTotal   = Number((novoSaldo + proxJuros).toFixed(2))
-
+  const taxa       = valorPrincipal > 0 ? valorJuros / valorPrincipal : 0
+  const proxJuros  = Number((novoSaldo * taxa).toFixed(2))
+  const proxTotal  = Number((novoSaldo + proxJuros).toFixed(2))
   const parcialValido = vp >= valorJuros && vp > 0
 
   function handlePagarJuros() {
@@ -64,22 +64,18 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
     startTransition(async () => {
       const result = await pagarParcial(parcelaAberta.id, vp)
       if (result?.error) { toast.error(String(result.error)); return }
-      if (result.quitado) {
-        toast.success('Empréstimo quitado com pagamento parcial!')
-      } else {
-        toast.success(`Pagamento registrado. Novo saldo: ${fmtMoeda(result.novoSaldo ?? 0)}`)
-      }
-      setModoParcial(false)
-      setValorPago('')
+      if (result.quitado) toast.success('Empréstimo quitado com pagamento parcial!')
+      else toast.success(`Pagamento registrado. Novo saldo: ${fmtMoeda(result.novoSaldo ?? 0)}`)
+      setModoParcial(false); setValorPago('')
       router.refresh()
     })
   }
 
   if (quitado) {
     return (
-      <Card className="border-green-500/30 bg-green-500/5">
+      <Card className="border-[var(--success)]/30 bg-[var(--success)]/5">
         <CardContent className="pt-6 flex items-center gap-3">
-          <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0" />
+          <CheckCircle2 className="h-6 w-6 text-[var(--success)] shrink-0" />
           <div>
             <p className="font-semibold">Empréstimo quitado</p>
             <p className="text-sm text-muted-foreground">O principal foi pago integralmente.</p>
@@ -90,41 +86,65 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
   }
 
   return (
-    <Card className={vencida ? 'border-destructive/40 bg-destructive/5' : 'border-primary/30'}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Cobrança atual</CardTitle>
-          <Badge variant={vencida ? 'destructive' : 'outline'}>
-            {vencida ? <><AlertTriangle className="mr-1 h-3 w-3" />Vencida</> : 'Em aberto'}
-          </Badge>
+    <Card className={cn(
+      'overflow-hidden p-0',
+      vencida ? 'border-destructive/40' : 'border-foreground',
+    )}>
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between border-b px-6 py-4 bg-muted/40">
+        <div>
+          <p className="eyebrow">Cobrança em aberto</p>
+          <p className="text-sm font-medium mt-1">
+            Vence {fmtData(parcelaAberta.vencimento)}
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Vencimento</span>
-            <span className={`font-medium ${vencida ? 'text-destructive' : ''}`}>
-              {fmtData(parcelaAberta.vencimento)}
-            </span>
+        {vencida ? (
+          <Badge variant="destructive" className="gap-1.5">
+            <AlertTriangle className="h-3 w-3" /> Vencida
+          </Badge>
+        ) : (
+          <Badge variant="secondary" className="gap-1.5 bg-[var(--warning)]/15 text-[var(--warning-foreground)] border-transparent">
+            <Calendar className="h-3 w-3" /> Hoje
+          </Badge>
+        )}
+      </div>
+
+      <CardContent className="p-6 space-y-5">
+        {/* Hero: total devido */}
+        <div>
+          <p className="eyebrow">Total devido</p>
+          <p className="mt-1 leading-none text-5xl">
+            <Money value={total} display />
+          </p>
+        </div>
+
+        {/* Decomposição principal / juros */}
+        <div className="border-y py-4 space-y-3">
+          <div className="flex h-2 gap-1 overflow-hidden rounded-full">
+            <div className="bg-foreground" style={{ flex: valorPrincipal }} />
+            <div className="bg-[var(--warning)]" style={{ flex: valorJuros }} />
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Principal em aberto</span>
-            <span className="font-medium">{fmtMoeda(valorPrincipal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Juros do período</span>
-            <span className="font-medium text-amber-600">{fmtMoeda(valorJuros)}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between font-semibold">
-            <span>Total devido</span>
-            <span className="text-lg">{fmtMoeda(Number(parcelaAberta.valor))}</span>
+          <div className="grid grid-cols-2 gap-6 text-sm">
+            <div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
+                <span className="eyebrow">Principal</span>
+              </div>
+              <p className="mt-1.5 text-lg"><Money value={valorPrincipal} /></p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)]" />
+                <span className="eyebrow">Juros ({(taxa * 100).toFixed(1)}%)</span>
+              </div>
+              <p className="mt-1.5 text-lg"><Money value={valorJuros} tone="warning" /></p>
+            </div>
           </div>
         </div>
 
-        {/* Modo pagamento parcial */}
+        {/* Ações OU modo parcial */}
         {modoParcial ? (
-          <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+          <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
             <p className="text-sm font-medium">Quanto o cliente pagou?</p>
             <input
               type="number"
@@ -134,27 +154,27 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
               value={valorPago}
               onChange={e => setValorPago(e.target.value)}
               className={INPUT_CLS}
+              autoFocus
             />
 
             {vp > 0 && (
               <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Cobre juros</span>
-                  <span className="text-amber-600">{fmtMoeda(Math.min(vp, valorJuros))}</span>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cobre juros</span>
+                  <Money value={Math.min(vp, valorJuros)} tone="warning" />
                 </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Abate do principal</span>
-                  <span className="text-blue-600">{fmtMoeda(abatimento)}</span>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Abate do principal</span>
+                  <Money value={abatimento} tone="success" />
                 </div>
-                <Separator />
-                <div className="flex justify-between font-medium">
+                <div className="flex justify-between font-medium border-t pt-1.5 mt-1.5">
                   <span>Novo saldo devedor</span>
-                  <span>{fmtMoeda(novoSaldo)}</span>
+                  <Money value={novoSaldo} />
                 </div>
                 {novoSaldo > 0 && (
                   <div className="flex justify-between text-muted-foreground">
                     <span>Próximo ciclo</span>
-                    <span>{fmtMoeda(proxTotal)} ({fmtMoeda(proxJuros)} juros)</span>
+                    <span><Money value={proxTotal} tone="muted" /> ({fmtMoeda(proxJuros)} juros)</span>
                   </div>
                 )}
                 {!parcialValido && vp > 0 && (
@@ -164,56 +184,44 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
             )}
 
             <div className="flex gap-2 pt-1">
-              <Button
-                size="sm"
-                disabled={pending || !parcialValido}
-                onClick={handlePagarParcial}
-                className="flex-1"
-              >
+              <Button size="sm" disabled={pending || !parcialValido} onClick={handlePagarParcial} className="flex-1">
                 {pending ? 'Registrando...' : 'Confirmar'}
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={pending}
-                onClick={() => { setModoParcial(false); setValorPago('') }}
-              >
+              <Button size="sm" variant="outline" disabled={pending}
+                onClick={() => { setModoParcial(false); setValorPago('') }}>
                 Cancelar
               </Button>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            <Button
-              variant="outline"
-              disabled={pending}
-              onClick={handlePagarJuros}
-              className="flex flex-col h-auto py-3 gap-1"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span className="text-xs font-medium">Só os juros</span>
-              <span className="text-xs text-muted-foreground">{fmtMoeda(valorJuros)}</span>
-            </Button>
-            <Button
-              variant="outline"
-              disabled={pending}
-              onClick={() => setModoParcial(true)}
-              className="flex flex-col h-auto py-3 gap-1"
-            >
-              <SplitSquareHorizontal className="h-4 w-4" />
-              <span className="text-xs font-medium">Valor parcial</span>
-              <span className="text-xs text-muted-foreground">abate saldo</span>
-            </Button>
-            <Button
-              disabled={pending}
-              onClick={handlePagarTudo}
-              className="flex flex-col h-auto py-3 gap-1"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="text-xs font-medium">Pagou tudo</span>
-              <span className="text-xs opacity-80">{fmtMoeda(Number(parcelaAberta.valor))}</span>
-            </Button>
-          </div>
+          <>
+            <p className="eyebrow">Como o cliente pagou?</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="outline" disabled={pending} onClick={handlePagarJuros}
+                className="flex h-auto flex-col items-start gap-1.5 py-3 px-3 text-left">
+                <RefreshCw className="h-4 w-4" />
+                <span className="text-xs font-medium">Só os juros</span>
+                <span className="text-[11px] text-muted-foreground"><Money value={valorJuros} /></span>
+              </Button>
+              <Button variant="outline" disabled={pending} onClick={() => setModoParcial(true)}
+                className="flex h-auto flex-col items-start gap-1.5 py-3 px-3 text-left">
+                <SplitSquareHorizontal className="h-4 w-4" />
+                <span className="text-xs font-medium">Valor parcial</span>
+                <span className="text-[11px] text-muted-foreground">abate saldo</span>
+              </Button>
+              <Button disabled={pending} onClick={handlePagarTudo}
+                className="flex h-auto flex-col items-start gap-1.5 py-3 px-3 text-left bg-[var(--success)] text-[var(--success-foreground)] hover:bg-[var(--success)]/90">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="text-xs font-semibold">Pagou tudo</span>
+                <span className="text-[11px] opacity-85"><Money value={total} /></span>
+              </Button>
+            </div>
+
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <RefreshCw className="h-3 w-3" />
+              Pagar só os juros rola o principal para o próximo mês.
+            </p>
+          </>
         )}
 
         {vencida && !modoParcial && (

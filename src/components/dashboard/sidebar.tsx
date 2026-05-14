@@ -1,22 +1,17 @@
+// src/components/dashboard/sidebar.tsx
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Users,
-  HandCoins,
-  Settings,
-  LogOut,
-} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Home, Users, HandCoins, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 
 const navLinks = [
-  { href: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/clientes',     label: 'Clientes',     icon: Users },
-  { href: '/emprestimos',  label: 'Empréstimos',  icon: HandCoins },
-  { href: '/configuracoes',label: 'Configurações', icon: Settings },
+  { href: '/dashboard',     label: 'Painel',         icon: Home },
+  { href: '/clientes',      label: 'Clientes',       icon: Users },
+  { href: '/emprestimos',   label: 'Empréstimos',    icon: HandCoins },
+  { href: '/configuracoes', label: 'Configurações',  icon: Settings },
 ]
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
@@ -32,31 +27,42 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
   return (
     <aside className="flex h-full w-60 flex-col border-r bg-background">
-      <div className="flex h-14 items-center border-b px-6">
-        <span className="text-lg font-bold tracking-tight">FinFlow</span>
+      {/* Marca */}
+      <div className="flex h-14 items-center gap-2.5 px-5 border-b">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background font-serif-display text-xl leading-none">
+          f
+        </span>
+        <span className="text-base font-medium tracking-tight">Finflow</span>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
-        {navLinks.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={onClose}
-            className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              pathname === href || pathname.startsWith(href + '/')
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {label}
-          </Link>
-        ))}
+
+      {/* Navegação */}
+      <nav className="flex-1 space-y-0.5 px-3 pt-4">
+        <p className="eyebrow px-3 pb-1.5">Menu</p>
+        {navLinks.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(href + '/')
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={onClose}
+              className={cn(
+                'flex h-9 items-center gap-3 rounded-lg px-3 text-sm transition-colors',
+                active
+                  ? 'bg-foreground text-background font-medium'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
-      <div className="border-t p-3">
+
+      <div className="p-3 space-y-2 border-t">
         <button
           onClick={sair}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex w-full h-9 items-center gap-3 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Sair
