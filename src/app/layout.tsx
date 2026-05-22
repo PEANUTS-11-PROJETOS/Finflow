@@ -23,7 +23,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: 'Finflow',
-  description: 'Gestão de empréstimos para credores',
+  description: 'Gestão de empréstimos para credores · by Peanuts Labs',
 }
 
 export default function RootLayout({

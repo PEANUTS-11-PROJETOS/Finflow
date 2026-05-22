@@ -11,7 +11,10 @@ export default function LoginPage() {
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background font-serif-display text-xl leading-none">
             f
           </span>
-          <span className="text-base font-medium tracking-tight">Finflow</span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-base font-medium tracking-tight">Finflow</span>
+            <span className="text-[10px] text-muted-foreground">by Peanuts Labs</span>
+          </div>
         </div>
 
         <div className="my-auto max-w-sm">
@@ -29,7 +32,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-muted-foreground flex justify-between">
-          <span>© {new Date().getFullYear()} Finflow</span>
+          <span>© {new Date().getFullYear()} Peanuts Labs</span>
           <span className="flex gap-4">
             <Link href="#" className="hover:text-foreground">Termos</Link>
             <Link href="#" className="hover:text-foreground">Privacidade</Link>

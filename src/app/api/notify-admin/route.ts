@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
 
   try {
     await transporter.sendMail({
-      from: `"FinFlow" <${process.env.GMAIL_USER}>`,
+      from: `"FinFlow by Peanuts Labs" <${process.env.GMAIL_USER}>`,
       to: process.env.GMAIL_USER,
       subject: '🔔 Novo usuário aguardando aprovação — FinFlow',
       html: `
         <div style="font-family:sans-serif;max-width:480px">
           <h2 style="color:#111">Novo cadastro no FinFlow</h2>
+          <p style="font-size:11px;color:#999">FinFlow · by Peanuts Labs</p>
           <p>Um novo usuário se cadastrou e está aguardando sua aprovação:</p>
           <table style="border-collapse:collapse;width:100%">
             <tr><td style="padding:8px;color:#666">Nome</td><td style="padding:8px;font-weight:600">${nome}</td></tr>

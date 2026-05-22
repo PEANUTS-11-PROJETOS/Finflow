@@ -32,6 +32,7 @@ export default function RedefinirSenhaPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight">FinFlow</h1>
+          <p className="text-[11px] text-muted-foreground">by Peanuts Labs</p>
           <p className="mt-2 text-sm text-muted-foreground">Redefinir senha</p>
         </div>
 

@@ -32,7 +32,10 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background font-serif-display text-xl leading-none">
           f
         </span>
-        <span className="text-base font-medium tracking-tight">Finflow</span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-base font-medium tracking-tight">Finflow</span>
+          <span className="text-[10px] text-muted-foreground">by Peanuts Labs</span>
+        </div>
       </div>
 
       {/* Navegação */}
