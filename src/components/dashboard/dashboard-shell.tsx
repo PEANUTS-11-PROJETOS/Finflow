@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { Menu } from 'lucide-react'
 import { Sidebar } from './sidebar'
 import { cn } from '@/lib/utils'
@@ -47,8 +48,17 @@ export function DashboardShell({
           {header}
         </div>
 
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto flex flex-col">
+          <div className="flex-1 p-6">
+            {children}
+          </div>
+          <footer className="border-t bg-background px-6 py-3 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2">
+            <span>© {new Date().getFullYear()} Peanuts Labs</span>
+            <span className="flex gap-4">
+              <Link href="/termos" className="hover:text-foreground">Termos</Link>
+              <Link href="/privacidade" className="hover:text-foreground">Privacidade</Link>
+            </span>
+          </footer>
         </main>
       </div>
     </div>

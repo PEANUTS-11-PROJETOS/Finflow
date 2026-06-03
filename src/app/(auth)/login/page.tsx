@@ -34,8 +34,8 @@ export default function LoginPage() {
         <p className="text-xs text-muted-foreground flex justify-between">
           <span>© {new Date().getFullYear()} Peanuts Labs</span>
           <span className="flex gap-4">
-            <Link href="#" className="hover:text-foreground">Termos</Link>
-            <Link href="#" className="hover:text-foreground">Privacidade</Link>
+            <Link href="/termos" className="hover:text-foreground">Termos</Link>
+            <Link href="/privacidade" className="hover:text-foreground">Privacidade</Link>
           </span>
         </p>
       </div>

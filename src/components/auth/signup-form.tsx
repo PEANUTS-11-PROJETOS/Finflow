@@ -9,11 +9,13 @@ import { supabase } from '@/lib/supabase/client'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { TERMOS_VERSAO } from '@/lib/termos'
 
 const schema = z.object({
   nome:  z.string().min(2, 'Nome obrigatório'),
   email: z.string().email('Email inválido'),
   senha: z.string().min(6, 'Mínimo 6 caracteres'),
+  termos: z.boolean().refine(v => v === true, 'Você precisa aceitar os Termos e a Política de Privacidade para criar a conta'),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -24,7 +26,7 @@ export function SignupForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: '', email: '', senha: '' },
+    defaultValues: { nome: '', email: '', senha: '', termos: false },
   })
 
   async function onSubmit({ nome, email, senha }: FormValues) {
@@ -32,7 +34,7 @@ export function SignupForm() {
     const { error } = await supabase.auth.signUp({
       email,
       password: senha,
-      options: { data: { nome } },
+      options: { data: { nome, termos_versao: TERMOS_VERSAO } },
     })
     if (error) {
       setErro(error.message)
@@ -95,6 +97,32 @@ export function SignupForm() {
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="termos"
+          render={({ field }) => (
+            <FormItem className="space-y-1">
+              <div className="flex items-start gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    id="termos"
+                    checked={field.value}
+                    onChange={e => field.onChange(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
+                  />
+                </FormControl>
+                <label htmlFor="termos" className="text-xs leading-relaxed text-muted-foreground cursor-pointer">
+                  Li e concordo com os{' '}
+                  <Link href="/termos" target="_blank" className="underline underline-offset-2 hover:text-foreground">Termos de Uso</Link>
+                  {' '}e a{' '}
+                  <Link href="/privacidade" target="_blank" className="underline underline-offset-2 hover:text-foreground">Política de Privacidade</Link>.
+                </label>
+              </div>
               <FormMessage />
             </FormItem>
           )}
