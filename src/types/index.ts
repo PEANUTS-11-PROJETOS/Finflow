@@ -2,9 +2,13 @@ export interface Credor {
   id: string
   nome: string
   email: string
-  plano: 'free' | 'pro' | 'premium'
-  stripe_customer_id: string | null
-  stripe_subscription_id: string | null
+  plano: 'trial' | 'ativo'
+  ciclo_plano: 'mensal' | 'anual' | null
+  data_vencimento: string | null
+  pagamento_confirmado: boolean
+  ativo: boolean
+  telefone: string | null
+  whatsapp_notificacoes: boolean
   created_at: string
 }
 

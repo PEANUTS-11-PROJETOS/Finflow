@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/dashboard/header'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { Toaster } from '@/components/ui/sonner'
-import { trialExpirado } from '@/lib/planos'
+import { estadoConta } from '@/lib/planos'
 
 const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
 
@@ -15,7 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: credor } = await supabase
     .from('credores')
-    .select('ativo, plano, created_at')
+    .select('ativo, plano, created_at, data_vencimento')
     .eq('id', user.id)
     .single()
 
@@ -25,7 +25,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       : 99
     redirect(diasCadastrado < 1 ? '/aguardando-aprovacao' : '/conta-desativada')
   }
-  if (credor && trialExpirado(credor.plano, credor.created_at)) redirect('/upgrade')
+  if (credor && estadoConta(credor.plano, credor.created_at, credor.data_vencimento) === 'expirado') {
+    redirect('/upgrade')
+  }
 
   return (
     <>

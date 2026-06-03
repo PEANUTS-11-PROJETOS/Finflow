@@ -1,13 +1,12 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { alterarPlano, toggleCredorAtivo, togglePagamento } from '@/app/admin/actions'
+import { confirmarPagamento, reverterParaTrial, toggleCredorAtivo } from '@/app/admin/actions'
 import { fmtData } from '@/lib/utils'
-import { CheckCircle, XCircle } from 'lucide-react'
+import { estadoConta, trialDiasRestantes, type Ciclo, type EstadoConta } from '@/lib/planos'
 
 export type CredorAdmin = {
   id: string
@@ -23,76 +22,55 @@ export type CredorAdmin = {
   emprestimos: { count: number }[]
 }
 
-const PLANOS = ['free', 'pro', 'premium']
-const CICLOS = ['mensal', 'anual']
-
-function vencimentoLabel(data: string | null) {
-  if (!data) return <span className="text-muted-foreground">—</span>
-  const diff = Math.ceil((new Date(data + 'T12:00:00').getTime() - Date.now()) / 86400000)
-  if (diff < 0)  return <span className="text-destructive font-medium">Vencido</span>
-  if (diff <= 7) return <span className="text-yellow-600 font-medium">{fmtData(data)} ({diff}d)</span>
-  return <span>{fmtData(data)}</span>
+function StatusBadge({ estado, dias }: { estado: EstadoConta; dias: number | null }) {
+  if (estado === 'ativo') {
+    return <Badge className="bg-[var(--success)]/15 text-[var(--success)] border-transparent">Ativo</Badge>
+  }
+  if (estado === 'trial') {
+    return (
+      <Badge variant="secondary" className="gap-1">
+        Teste
+        {dias !== null && <span className="text-muted-foreground">· {dias}d</span>}
+      </Badge>
+    )
+  }
+  return <Badge variant="destructive">Expirado</Badge>
 }
 
-function PlanoEditor({ credor }: { credor: CredorAdmin }) {
+function AcoesPlano({ credor, estado }: { credor: CredorAdmin; estado: EstadoConta }) {
   const [pending, startTransition] = useTransition()
-  const [plano, setPlano] = useState(credor.plano)
-  const [ciclo, setCiclo] = useState<string>(credor.ciclo_plano ?? '')
-  const dirty = plano !== credor.plano || ciclo !== (credor.ciclo_plano ?? '')
 
-  function salvar() {
-    if (plano !== 'free' && !ciclo) {
-      toast.error('Selecione o ciclo')
-      return
-    }
+  function ativar(ciclo: Ciclo) {
     startTransition(async () => {
-      await alterarPlano(credor.id, plano, plano === 'free' ? null : ciclo)
-      toast.success('Plano atualizado')
+      await confirmarPagamento(credor.id, ciclo)
+      toast.success(estado === 'ativo' ? `Renovado +${ciclo === 'anual' ? '1 ano' : '30 dias'}` : `Ativado (${ciclo})`)
     })
   }
 
+  function reverter() {
+    startTransition(async () => {
+      await reverterParaTrial(credor.id)
+      toast.success('Revertido para teste')
+    })
+  }
+
+  const labelMensal = estado === 'ativo' ? '+30d' : 'Mensal'
+  const labelAnual  = estado === 'ativo' ? '+1 ano' : 'Anual'
+
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
-      <Select value={plano} disabled={pending} onValueChange={(v) => { if (v) setPlano(v) }}>
-        <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {PLANOS.map(p => <SelectItem key={p} value={p} className="text-xs capitalize">{p}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      {plano !== 'free' && (
-        <Select value={ciclo} disabled={pending} onValueChange={(v) => { if (v) setCiclo(v) }}>
-          <SelectTrigger className="w-20 h-7 text-xs"><SelectValue placeholder="ciclo" /></SelectTrigger>
-          <SelectContent>
-            {CICLOS.map(c => <SelectItem key={c} value={c} className="text-xs capitalize">{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
-      {dirty && (
-        <Button size="sm" disabled={pending} onClick={salvar} className="h-7 text-xs px-2">
-          {pending ? '...' : 'Salvar'}
+      <Button size="sm" variant="outline" disabled={pending} onClick={() => ativar('mensal')} className="h-7 text-xs px-2">
+        {labelMensal}
+      </Button>
+      <Button size="sm" disabled={pending} onClick={() => ativar('anual')} className="h-7 text-xs px-2">
+        {labelAnual}
+      </Button>
+      {estado === 'ativo' && (
+        <Button size="sm" variant="ghost" disabled={pending} onClick={reverter} className="h-7 text-xs px-2 text-muted-foreground">
+          Reverter
         </Button>
       )}
     </div>
-  )
-}
-
-function PagamentoBtn({ credorId, pago, plano }: { credorId: string; pago: boolean; plano: string }) {
-  const [pending, startTransition] = useTransition()
-  if (plano === 'free') return <span className="text-muted-foreground text-xs">—</span>
-  return (
-    <button
-      disabled={pending}
-      onClick={() => startTransition(async () => {
-        await togglePagamento(credorId, !pago)
-        toast.success(pago ? 'Pagamento desmarcado' : 'Pagamento confirmado')
-      })}
-      className="flex items-center gap-1 text-sm disabled:opacity-50"
-    >
-      {pago
-        ? <><CheckCircle className="h-4 w-4 text-green-600" /><span className="text-green-600 font-medium">Pago</span></>
-        : <><XCircle className="h-4 w-4 text-destructive" /><span className="text-destructive">Pendente</span></>
-      }
-    </button>
   )
 }
 
@@ -110,6 +88,16 @@ function ToggleAtivoBtn({ credorId, ativo }: { credorId: string; ativo: boolean 
   )
 }
 
+function vencimentoLabel(estado: EstadoConta, data: string | null, ciclo: string | null) {
+  if (estado === 'trial') return <span className="text-muted-foreground">—</span>
+  if (estado === 'expirado') return <span className="text-destructive font-medium">Expirado</span>
+  if (!data) return <span className="text-muted-foreground">—</span>
+  const diff = Math.ceil((new Date(data + 'T12:00:00').getTime() - Date.now()) / 86400000)
+  const cicloLabel = ciclo ? <span className="text-xs text-muted-foreground ml-1">({ciclo})</span> : null
+  if (diff <= 7) return <span className="text-yellow-600 font-medium">{fmtData(data)} ({diff}d){cicloLabel}</span>
+  return <span>{fmtData(data)}{cicloLabel}</span>
+}
+
 export function AdminTable({ credores }: { credores: CredorAdmin[] }) {
   return (
     <div className="rounded-md border overflow-x-auto">
@@ -118,13 +106,13 @@ export function AdminTable({ credores }: { credores: CredorAdmin[] }) {
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Plano / Ciclo</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Vencimento</TableHead>
-            <TableHead>Pagamento</TableHead>
+            <TableHead>Ação</TableHead>
             <TableHead className="text-center">Clientes</TableHead>
             <TableHead className="text-center">Empréstimos</TableHead>
             <TableHead>Cadastro</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Conta</TableHead>
             <TableHead />
           </TableRow>
         </TableHeader>
@@ -136,24 +124,28 @@ export function AdminTable({ credores }: { credores: CredorAdmin[] }) {
               </TableCell>
             </TableRow>
           )}
-          {credores.map(c => (
-            <TableRow key={c.id}>
-              <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">{c.email}</TableCell>
-              <TableCell><PlanoEditor credor={c} /></TableCell>
-              <TableCell className="text-sm whitespace-nowrap">{vencimentoLabel(c.data_vencimento)}</TableCell>
-              <TableCell><PagamentoBtn credorId={c.id} pago={c.pagamento_confirmado} plano={c.plano} /></TableCell>
-              <TableCell className="text-center">{c.clientes[0]?.count ?? 0}</TableCell>
-              <TableCell className="text-center">{c.emprestimos[0]?.count ?? 0}</TableCell>
-              <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{fmtData(c.created_at)}</TableCell>
-              <TableCell>
-                <Badge variant={c.ativo ? 'default' : 'secondary'}>
-                  {c.ativo ? 'Ativo' : 'Inativo'}
-                </Badge>
-              </TableCell>
-              <TableCell><ToggleAtivoBtn credorId={c.id} ativo={c.ativo} /></TableCell>
-            </TableRow>
-          ))}
+          {credores.map(c => {
+            const estado = estadoConta(c.plano, c.created_at, c.data_vencimento)
+            const diasTrial = estado === 'trial' ? trialDiasRestantes(c.created_at) : null
+            return (
+              <TableRow key={c.id}>
+                <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{c.email}</TableCell>
+                <TableCell><StatusBadge estado={estado} dias={diasTrial} /></TableCell>
+                <TableCell className="text-sm whitespace-nowrap">{vencimentoLabel(estado, c.data_vencimento, c.ciclo_plano)}</TableCell>
+                <TableCell><AcoesPlano credor={c} estado={estado} /></TableCell>
+                <TableCell className="text-center">{c.clientes[0]?.count ?? 0}</TableCell>
+                <TableCell className="text-center">{c.emprestimos[0]?.count ?? 0}</TableCell>
+                <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{fmtData(c.created_at)}</TableCell>
+                <TableCell>
+                  <Badge variant={c.ativo ? 'default' : 'secondary'}>
+                    {c.ativo ? 'Ativa' : 'Inativa'}
+                  </Badge>
+                </TableCell>
+                <TableCell><ToggleAtivoBtn credorId={c.id} ativo={c.ativo} /></TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>

@@ -1,80 +1,50 @@
-export const PLANOS = {
-  free: {
-    nome: 'Free',
-    clientes: 10,
-    preco_mensal: 0,
-    preco_anual: 0,
-    trial_dias: 15,
-    features: [
-      'Até 10 clientes',
-      'Empréstimos price e renovável',
-      'Dashboard com KPIs',
-      '15 dias de teste grátis',
-    ],
-    nao_inclui: [
-      'Relatório de inadimplência',
-      'Exportação CSV',
-      'Histórico completo',
-      'Suporte prioritário',
-    ],
-  },
-  pro: {
-    nome: 'Pro',
-    clientes: 100,
-    preco_mensal: 5000,
-    preco_anual: 50000,
-    trial_dias: 0,
-    features: [
-      'Até 100 clientes',
-      'Empréstimos price e renovável',
-      'Dashboard com KPIs',
-      'Relatório de inadimplência',
-      'Exportação CSV',
-    ],
-    nao_inclui: [
-      'Histórico completo',
-      'Suporte prioritário',
-    ],
-  },
-  premium: {
-    nome: 'Premium',
-    clientes: -1,
-    preco_mensal: 8000,
-    preco_anual: 80000,
-    trial_dias: 0,
-    features: [
-      'Clientes ilimitados',
-      'Empréstimos price e renovável',
-      'Dashboard com KPIs',
-      'Relatório de inadimplência',
-      'Exportação CSV',
-      'Histórico completo',
-      'Suporte prioritário',
-    ],
-    nao_inclui: [],
-  },
+export const PLANO = {
+  trial_dias: 30,
+  preco_mensal: 5990,
+  preco_anual: 44900,
+  preco_anual_promo: 34900,
+  features: [
+    'Clientes ilimitados',
+    'Empréstimos price e renovável',
+    'Dashboard com KPIs',
+    'Relatório de inadimplência',
+    'Exportação CSV',
+    'Histórico completo',
+    'Suporte prioritário via WhatsApp',
+  ],
+  features_em_breve: [
+    'Notificações WhatsApp diárias',
+  ],
 } as const
 
-export type Plano = keyof typeof PLANOS
+export type PlanoCredor = 'trial' | 'ativo'
+export type EstadoConta = 'trial' | 'ativo' | 'expirado'
+export type Ciclo = 'mensal' | 'anual'
 
-export function podeAdicionarCliente(plano: Plano, totalAtual: number): boolean {
-  const limite = PLANOS[plano].clientes
-  return limite === -1 || totalAtual < limite
-}
-
-export function precoPlano(plano: string, ciclo: string | null): number {
-  const p = PLANOS[plano as Plano]
-  if (!p || plano === 'free') return 0
-  return ciclo === 'anual' ? p.preco_anual : p.preco_mensal
-}
-
-export function trialExpirado(plano: string, createdAt: string): boolean {
-  if (plano !== 'free') return false
+export function estadoConta(
+  plano: string,
+  createdAt: string,
+  dataVencimento: string | null,
+): EstadoConta {
+  if (plano === 'ativo') {
+    if (!dataVencimento) return 'expirado'
+    const venc = new Date(dataVencimento + 'T12:00:00').getTime()
+    return venc >= Date.now() ? 'ativo' : 'expirado'
+  }
   const dias = (Date.now() - new Date(createdAt).getTime()) / 86400000
-  return dias > PLANOS.free.trial_dias
+  return dias > PLANO.trial_dias ? 'expirado' : 'trial'
 }
 
 export function trialDiasRestantes(createdAt: string): number {
   const dias = (Date.now() - new Date(createdAt).getTime()) / 86400000
-  return Math.max(0, Math.ceil(PLANOS.free.trial_dias - dias))
+  return Math.max(0, Math.ceil(PLANO.trial_dias - dias))
+}
+
+export function precoCiclo(ciclo: Ciclo, primeiroPagamento: boolean): number {
+  if (ciclo === 'anual') return primeiroPagamento ? PLANO.preco_anual_promo : PLANO.preco_anual
+  return PLANO.preco_mensal
+}
+
+export function diasDoCiclo(ciclo: Ciclo): number {
+  return ciclo === 'anual' ? 365 : 30
 }

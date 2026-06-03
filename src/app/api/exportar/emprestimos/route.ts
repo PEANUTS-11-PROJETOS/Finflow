@@ -6,13 +6,6 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const { data: credor } = await supabase
-    .from('credores').select('plano').eq('id', user.id).single()
-
-  if (!credor || credor.plano === 'free') {
-    return NextResponse.json({ error: 'Recurso disponível nos planos Pro e Premium' }, { status: 403 })
-  }
-
   const { data: emprestimos } = await supabase
     .from('emprestimos')
     .select(`
