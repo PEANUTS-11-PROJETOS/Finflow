@@ -51,7 +51,8 @@ export async function GET(req: NextRequest) {
     const proximas    = parcelas.filter(p => p.vencimento > hojeStr)
     const totalHoje   = hoje_list.reduce((s, p) => s + p.valor, 0)
 
-    function nomeCliente(p: typeof parcelas[0]): string {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function nomeCliente(p: any): string {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const emp = p.emprestimos as any
       const cli = Array.isArray(emp) ? emp[0]?.clientes : emp?.clientes
