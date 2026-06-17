@@ -9,9 +9,13 @@ import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { criarEmprestimo } from '@/app/(dashboard)/emprestimos/actions'
+import { criarCliente } from '@/app/(dashboard)/clientes/actions'
 import { fmtMoeda } from '@/lib/utils'
 import type { Cliente } from '@/types'
+import { UserPlus } from 'lucide-react'
 
 const INPUT_CLS = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
@@ -30,18 +34,135 @@ const schemaRenovavel = z.object({
   observacoes:     z.string().optional(),
 })
 
-type PriceValues     = z.infer<typeof schemaPrice>
-type RenovavelValues = z.infer<typeof schemaRenovavel>
+const schemaNovoCliente = z.object({
+  nome:     z.string().min(2, 'Nome obrigatório'),
+  cpf:      z.string().optional(),
+  telefone: z.string().optional(),
+  email:    z.string().email('Email inválido').optional().or(z.literal('')),
+})
+
+type PriceValues        = z.infer<typeof schemaPrice>
+type RenovavelValues    = z.infer<typeof schemaRenovavel>
+type NovoClienteValues  = z.infer<typeof schemaNovoCliente>
 
 interface Props {
   clientes: Pick<Cliente, 'id' | 'nome'>[]
 }
 
-export function FormEmprestimo({ clientes }: Props) {
+function ClienteSelect({
+  clientes,
+  value,
+  onChange,
+  onAdd,
+}: {
+  clientes: Pick<Cliente, 'id' | 'nome'>[]
+  value: string
+  onChange: (id: string) => void
+  onAdd: (cliente: Pick<Cliente, 'id' | 'nome'>) => void
+}) {
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const form = useForm<NovoClienteValues>({
+    resolver: zodResolver(schemaNovoCliente),
+    defaultValues: { nome: '', cpf: '', telefone: '', email: '' },
+  })
+
+  async function onSubmit(values: NovoClienteValues) {
+    const result = await criarCliente(values)
+    if (result?.error) {
+      toast.error('Erro ao cadastrar cliente')
+      return
+    }
+    toast.success('Cliente cadastrado!')
+    setDialogOpen(false)
+    form.reset()
+    if (result.id && result.nome) {
+      onAdd({ id: result.id, nome: result.nome })
+      onChange(result.id)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium">Cliente *</label>
+        <button
+          type="button"
+          onClick={() => setDialogOpen(true)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          Novo cliente
+        </button>
+      </div>
+
+      <select value={value} onChange={e => onChange(e.target.value)} className={INPUT_CLS}>
+        <option value="">Selecione o cliente</option>
+        {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+      </select>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastrar novo cliente</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-1">
+              <FormField control={form.control} name="nome" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome completo *</FormLabel>
+                  <Input placeholder="João da Silva" {...field} />
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="cpf" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF</FormLabel>
+                    <Input placeholder="000.000.000-00" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="telefone" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <Input placeholder="(11) 99999-9999" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <Input type="email" placeholder="joao@email.com" {...field} />
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="flex gap-3 pt-1">
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
   const router = useRouter()
   const [tipo, setTipo] = useState<'price' | 'renovavel'>('price')
   const [clientePrice, setClientePrice] = useState('')
   const [clienteRenovavel, setClienteRenovavel] = useState('')
+  const [clientes, setClientes] = useState(clientesIniciais)
+
+  function onAdd(cliente: Pick<Cliente, 'id' | 'nome'>) {
+    setClientes(prev => [...prev, cliente].sort((a, b) => a.nome.localeCompare(b.nome)))
+  }
 
   const formPrice = useForm<PriceValues>({
     resolver: zodResolver(schemaPrice) as unknown as Resolver<PriceValues>,
@@ -109,13 +230,12 @@ export function FormEmprestimo({ clientes }: Props) {
       {tipo === 'price' && (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Cliente *</label>
-              <select value={clientePrice} onChange={e => setClientePrice(e.target.value)} className={INPUT_CLS}>
-                <option value="">Selecione o cliente</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-              </select>
-            </div>
+            <ClienteSelect
+              clientes={clientes}
+              value={clientePrice}
+              onChange={setClientePrice}
+              onAdd={onAdd}
+            />
 
             <Form {...formPrice}>
               <form onSubmit={formPrice.handleSubmit(onSubmitPrice)} className="space-y-4">
@@ -221,13 +341,12 @@ export function FormEmprestimo({ clientes }: Props) {
       {tipo === 'renovavel' && (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Cliente *</label>
-              <select value={clienteRenovavel} onChange={e => setClienteRenovavel(e.target.value)} className={INPUT_CLS}>
-                <option value="">Selecione o cliente</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-              </select>
-            </div>
+            <ClienteSelect
+              clientes={clientes}
+              value={clienteRenovavel}
+              onChange={setClienteRenovavel}
+              onAdd={onAdd}
+            />
 
             <Form {...formRenovavel}>
               <form onSubmit={formRenovavel.handleSubmit(onSubmitRenovavel)} className="space-y-4">

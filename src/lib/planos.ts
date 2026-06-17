@@ -11,10 +11,9 @@ export const PLANO = {
     'Exportação CSV',
     'Histórico completo',
     'Suporte prioritário via WhatsApp',
+    'Notificações WhatsApp diárias às 8h',
   ],
-  features_em_breve: [
-    'Notificações WhatsApp diárias',
-  ],
+  features_em_breve: [],
 } as const
 
 export type PlanoCredor = 'trial' | 'ativo'

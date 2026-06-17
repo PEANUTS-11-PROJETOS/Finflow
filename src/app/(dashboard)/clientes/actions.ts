@@ -20,15 +20,15 @@ export async function criarCliente(data: ClienteInput) {
   const parsed = schema.safeParse(data)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
-  const { error } = await supabase.from('clientes').insert({
+  const { data: novo, error } = await supabase.from('clientes').insert({
     ...parsed.data,
     email: parsed.data.email || null,
     credor_id: user.id,
-  })
+  }).select('id, nome').single()
   if (error) return { error: error.message }
 
   revalidatePath('/clientes')
-  return { success: true }
+  return { success: true, id: novo.id, nome: novo.nome }
 }
 
 export async function atualizarCliente(id: string, data: ClienteInput) {

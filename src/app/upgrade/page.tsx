@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Check, Sparkles } from 'lucide-react'
 import { PLANO } from '@/lib/planos'
 import { fmtMoeda } from '@/lib/utils'
+import { SignOutButton } from '@/components/auth/sign-out-button'
 
 const WHATSAPP_URL = 'https://wa.me/5511989408375'
 const wa = (msg: string) => `${WHATSAPP_URL}?text=${encodeURIComponent(msg)}`
@@ -130,9 +130,7 @@ export default async function UpgradePage() {
         </p>
 
         <div className="text-center">
-          <Button variant="ghost" size="sm" render={<Link href="/login" />}>
-            Sair da conta
-          </Button>
+          <SignOutButton />
         </div>
       </div>
     </div>

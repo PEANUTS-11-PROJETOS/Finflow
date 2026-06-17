@@ -13,17 +13,6 @@ export default async function NovoEmprestimoPage() {
     .eq('ativo', true)
     .order('nome')
 
-  if (!clientes || clientes.length === 0) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Novo empréstimo</h1>
-        <p className="text-muted-foreground">
-          Você precisa ter ao menos um cliente ativo antes de criar um empréstimo.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <div>

@@ -39,10 +39,28 @@ export async function confirmarPagamento(credorId: string, ciclo: Ciclo) {
       plano: 'ativo',
       ciclo_plano: ciclo,
       pagamento_confirmado: true,
+      ativo: true,
       data_vencimento: novaDataVencimento(baseVenc, ciclo),
     })
     .eq('id', credorId)
 
+  revalidatePath('/admin')
+}
+
+export async function estenderTrial(credorId: string) {
+  await checkAdmin()
+  const admin = createAdminClient()
+  const dataVenc = new Date()
+  dataVenc.setDate(dataVenc.getDate() + 15)
+  await admin
+    .from('credores')
+    .update({
+      plano: 'ativo',
+      ciclo_plano: null,
+      ativo: true,
+      data_vencimento: dataVenc.toISOString().split('T')[0],
+    })
+    .eq('id', credorId)
   revalidatePath('/admin')
 }
 

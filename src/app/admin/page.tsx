@@ -18,7 +18,7 @@ export default async function AdminPage() {
 
   const { data: credores } = await admin
     .from('credores')
-    .select(`id, nome, email, plano, ciclo_plano, data_vencimento, pagamento_confirmado, ativo, created_at, clientes(count), emprestimos(count)`)
+    .select(`id, nome, email, telefone, plano, ciclo_plano, data_vencimento, pagamento_confirmado, ativo, created_at, clientes(count), emprestimos(count)`)
     .neq('email', ADMIN_EMAIL)
     .neq('email', TEST_EMAIL)
     .order('created_at', { ascending: false })
