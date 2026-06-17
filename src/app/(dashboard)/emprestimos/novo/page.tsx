@@ -21,7 +21,7 @@ export default async function NovoEmprestimoPage() {
           As parcelas serão geradas automaticamente pela Tabela Price.
         </p>
       </div>
-      <FormEmprestimo clientes={clientes} />
+      <FormEmprestimo clientes={clientes ?? []} />
     </div>
   )
 }
