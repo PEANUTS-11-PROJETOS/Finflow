@@ -51,17 +51,18 @@ export async function GET(req: NextRequest) {
     const proximas    = parcelas.filter(p => p.vencimento > hojeStr)
     const totalHoje   = hoje_list.reduce((s, p) => s + p.valor, 0)
 
-    const linhaCliente = (p: typeof parcelas[0]) => {
-      const emp = p.emprestimos as { clientes: { nome: string } | null } | null
-      const nome = emp?.clientes?.nome ?? 'Cliente'
-      return `• ${nome} — ${fmtMoeda(p.valor)}`
+    function nomeCliente(p: typeof parcelas[0]): string {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const emp = p.emprestimos as any
+      const cli = Array.isArray(emp) ? emp[0]?.clientes : emp?.clientes
+      return (Array.isArray(cli) ? cli[0]?.nome : cli?.nome) ?? 'Cliente'
     }
 
     let msg = `📊 *Resumo FinFlow — ${hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}*\n\n`
 
     if (hoje_list.length) {
       msg += `*Vencendo hoje:*\n`
-      msg += hoje_list.map(linhaCliente).join('\n')
+      msg += hoje_list.map(p => `• ${nomeCliente(p)} — ${fmtMoeda(p.valor)}`).join('\n')
       msg += `\n\n💰 Total hoje: *${fmtMoeda(totalHoje)}*\n`
     } else {
       msg += `✅ Nenhum vencimento hoje.\n`
@@ -70,10 +71,8 @@ export async function GET(req: NextRequest) {
     if (proximas.length) {
       msg += `\n*Próximos 3 dias:*\n`
       msg += proximas.map(p => {
-        const emp = p.emprestimos as { clientes: { nome: string } | null } | null
-        const nome = emp?.clientes?.nome ?? 'Cliente'
         const venc = new Date(p.vencimento + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-        return `• ${nome} — ${fmtMoeda(p.valor)} (${venc})`
+        return `• ${nomeCliente(p)} — ${fmtMoeda(p.valor)} (${venc})`
       }).join('\n')
     }
 
