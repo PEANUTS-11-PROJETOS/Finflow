@@ -76,6 +76,9 @@ function AcoesPlano({ credor, estado }: { credor: CredorAdmin; estado: EstadoCon
   if (estado === 'expirado') {
     return (
       <div className="flex items-center gap-1.5 flex-wrap">
+        <Button size="sm" variant="outline" disabled={pending} onClick={extender} className="h-7 text-xs px-2">
+          +15d
+        </Button>
         <Button size="sm" variant="outline" disabled={pending} onClick={() => ativar('mensal')} className="h-7 text-xs px-2">
           Reativar mensal
         </Button>
