@@ -48,30 +48,6 @@ export default async function DashboardPage() {
     return sum + Math.max(0, Number(p.valor) - principalPorcao)
   }, 0) ?? 0
 
-  // Inadimplentes agrupados por empréstimo
-  type AtrasadoItem = { clienteId: string; clienteNome: string; empId: string; tipo: string; total: number; numParcelas: number; maisAntiga: string }
-  const atrasadosMap = new Map<string, AtrasadoItem>()
-  for (const p of parcelasVencidas ?? []) {
-    const emp = p.emprestimos as unknown as { id: string; tipo: string; clientes: { id: string; nome: string } | null } | null
-    if (!emp?.clientes) continue
-    const existing = atrasadosMap.get(emp.id)
-    if (existing) {
-      existing.total += Number(p.valor)
-      existing.numParcelas++
-    } else {
-      atrasadosMap.set(emp.id, {
-        clienteId: emp.clientes.id,
-        clienteNome: emp.clientes.nome,
-        empId: emp.id,
-        tipo: emp.tipo,
-        total: Number(p.valor),
-        numParcelas: 1,
-        maisAntiga: (p as unknown as { vencimento: string }).vencimento,
-      })
-    }
-  }
-  const atrasados = Array.from(atrasadosMap.values())
-
   // Cobranças de hoje agrupadas
   type VencHoje = { clienteId: string; clienteNome: string; empId: string; tipo: string; valor: number }
   const vencHojeAgrupados = (vencimentosHoje ?? []).reduce<VencHoje[]>((acc, p) => {
@@ -173,7 +149,7 @@ export default async function DashboardPage() {
             </CardContent>
           )
           return isAtrasado
-            ? <Link key={k.label} href="#em-atraso" scroll={true}><Card className="hover:border-destructive/50 transition-colors cursor-pointer">{inner}</Card></Link>
+            ? <Link key={k.label} href="/inadimplentes"><Card className="hover:border-destructive/50 transition-colors cursor-pointer">{inner}</Card></Link>
             : <Card key={k.label}>{inner}</Card>
         })}
       </div>
@@ -218,43 +194,6 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
-      {/* Em atraso */}
-      {atrasados.length > 0 && (
-        <div id="em-atraso">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-lg flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              Em atraso
-            </h2>
-            <Badge variant="destructive" className="gap-1">
-              {atrasados.length} {atrasados.length === 1 ? 'empréstimo' : 'empréstimos'}
-            </Badge>
-          </div>
-          <div className="space-y-2">
-            {atrasados.map((a) => {
-              const diasAtraso = Math.floor((Date.now() - new Date(a.maisAntiga + 'T12:00:00').getTime()) / 86400000)
-              return (
-                <Link key={a.empId} href={`/emprestimos/${a.empId}`}
-                  className="flex items-center gap-4 rounded-xl border border-destructive/20 bg-card px-4 py-3.5 hover:border-destructive/50 transition-colors">
-                  <div className="w-9 h-9 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-xs font-semibold flex-none">
-                    {a.clienteNome.split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{a.clienteNome}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {a.tipo === 'price' ? 'Tabela Price' : 'Renovável'} · {a.numParcelas} {a.numParcelas === 1 ? 'parcela' : 'parcelas'} · há {diasAtraso}d
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-destructive font-medium"><Money value={a.total} tone="danger" /></p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground flex-none" />
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
