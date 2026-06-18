@@ -275,6 +275,24 @@ export async function marcarParcela(parcelaId: string, pago: boolean) {
   return { success: true }
 }
 
+export async function deletarEmprestimo(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado' }
+
+  // Confirma que pertence ao credor antes de excluir
+  const { data: emp } = await supabase
+    .from('emprestimos').select('id').eq('id', id).eq('credor_id', user.id).single()
+  if (!emp) return { error: 'Empréstimo não encontrado' }
+
+  await supabase.from('parcelas').delete().eq('emprestimo_id', id)
+  const { error } = await supabase.from('emprestimos').delete().eq('id', id).eq('credor_id', user.id)
+  if (error) return { error: error.message }
+
+  revalidatePath('/emprestimos')
+  return { success: true }
+}
+
 export async function atualizarStatusEmprestimo(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

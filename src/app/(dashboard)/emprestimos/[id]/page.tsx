@@ -11,6 +11,7 @@ import { CardCobrancaRenovavel } from '@/components/dashboard/card-cobranca-reno
 import { ArrowLeft, RefreshCw, Phone } from 'lucide-react'
 import { fmtData } from '@/lib/utils'
 import type { Parcela } from '@/types'
+import { BotaoExcluirEmprestimo } from '@/components/dashboard/botao-excluir-emprestimo'
 
 const statusChip: Record<string, React.ReactNode> = {
   ativo: (
@@ -100,15 +101,16 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
               </p>
             </div>
           </div>
-          {waLink && (
-            <div>
+          <div className="flex flex-wrap gap-2">
+            {waLink && (
               <a href={waLink} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="gap-2 w-full sm:w-auto">
                   <Phone className="h-4 w-4" /> Cobrar via WhatsApp
                 </Button>
               </a>
-            </div>
-          )}
+            )}
+            <BotaoExcluirEmprestimo emprestimoId={id} nomeCliente={nomeCliente} />
+          </div>
         </CardContent>
       </Card>
 
