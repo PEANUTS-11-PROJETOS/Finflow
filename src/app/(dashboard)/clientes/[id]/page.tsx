@@ -9,6 +9,7 @@ import { DocumentosCliente } from '@/components/dashboard/documentos-cliente'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import type { Emprestimo } from '@/types'
+import { BotaoExcluirCliente } from '@/components/dashboard/botao-excluir-cliente'
 
 export default async function ClienteDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -41,6 +42,7 @@ export default async function ClienteDetalhePage({ params }: { params: Promise<{
             {[cliente.cpf, cliente.telefone, cliente.email].filter(Boolean).join(' · ') || 'Sem informações de contato'}
           </p>
         </div>
+        <BotaoExcluirCliente clienteId={id} nomeCliente={cliente.nome} />
       </div>
 
       <Separator />

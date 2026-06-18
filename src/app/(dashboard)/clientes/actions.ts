@@ -50,6 +50,32 @@ export async function atualizarCliente(id: string, data: ClienteInput) {
   return { success: true }
 }
 
+export async function deletarCliente(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado' }
+
+  const { count } = await supabase
+    .from('emprestimos')
+    .select('*', { count: 'exact', head: true })
+    .eq('cliente_id', id)
+    .eq('credor_id', user.id)
+
+  if (count && count > 0)
+    return { error: `Este cliente possui ${count} empréstimo${count > 1 ? 's' : ''} cadastrado${count > 1 ? 's' : ''}. Exclua os empréstimos primeiro.` }
+
+  const { error } = await supabase
+    .from('clientes')
+    .delete()
+    .eq('id', id)
+    .eq('credor_id', user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/clientes')
+  return { success: true }
+}
+
 export async function desativarCliente(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
