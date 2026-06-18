@@ -33,7 +33,7 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
   if (!user) redirect('/login')
 
   const [{ data: emprestimo }, { data: parcelas }] = await Promise.all([
-    supabase.from('emprestimos').select('*, clientes(id, nome)').eq('id', id).eq('credor_id', user.id).single(),
+    supabase.from('emprestimos').select('*, clientes(id, nome, telefone)').eq('id', id).eq('credor_id', user.id).single(),
     supabase.from('parcelas').select('*').eq('emprestimo_id', id).order('numero'),
   ])
 
@@ -50,9 +50,22 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
     return s + (p.pago ? Math.max(0, Number(p.valor) - principalPorcao) : 0)
   }, 0) ?? 0
 
-  const nomeCliente = (emprestimo.clientes as { nome: string })?.nome
+  const cliente   = emprestimo.clientes as { nome: string; telefone: string | null } | null
+  const nomeCliente = cliente?.nome ?? ''
   const renovavel = emprestimo.tipo === 'renovavel'
   const ciclosPagos = parcelas?.filter(p => p.pago || p.rolado).length ?? 0
+
+  // WhatsApp link — wa.me funciona no app mobile e no WhatsApp Web
+  const proximaParcela = (parcelas ?? []).find(p => !p.pago && !p.rolado)
+  const waLink = (() => {
+    if (!cliente?.telefone) return null
+    const valor = proximaParcela ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(proximaParcela.valor)) : ''
+    const venc  = proximaParcela ? fmtData(proximaParcela.vencimento) : ''
+    const msg = proximaParcela
+      ? `Olá ${nomeCliente}! Passando para lembrar da parcela do seu empréstimo 📋\n\nValor: ${valor}\nVencimento: ${venc}\n\nQualquer dúvida estou à disposição! 😊`
+      : `Olá ${nomeCliente}! Tudo bem? Passando para falar sobre o seu empréstimo. 😊`
+    return `https://wa.me/55${cliente.telefone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`
+  })()
 
   return (
     <div className="space-y-6">
@@ -68,28 +81,34 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
 
       {/* Header card */}
       <Card>
-        <CardContent className="p-7 flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              {statusChip[emprestimo.status] ?? statusChip.ativo}
-              <Badge variant="outline" className="gap-1.5">
-                {renovavel ? <><RefreshCw className="h-3 w-3" />Renovável</> : `${emprestimo.num_parcelas}× Tabela Price`}
-              </Badge>
-              <Badge variant="outline">{emprestimo.taxa_juros}% a.m.</Badge>
+        <CardContent className="p-7 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                {statusChip[emprestimo.status] ?? statusChip.ativo}
+                <Badge variant="outline" className="gap-1.5">
+                  {renovavel ? <><RefreshCw className="h-3 w-3" />Renovável</> : `${emprestimo.num_parcelas}× Tabela Price`}
+                </Badge>
+                <Badge variant="outline">{emprestimo.taxa_juros}% a.m.</Badge>
+              </div>
+              <h1 className="font-serif-display text-3xl md:text-4xl leading-[1.1]">
+                Empréstimo de <i>{nomeCliente}</i>
+              </h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                Aberto em {fmtData(emprestimo.created_at)}
+                {renovavel && ciclosPagos > 0 && ` · ${ciclosPagos} ${ciclosPagos === 1 ? 'ciclo pago' : 'ciclos pagos'}`}
+              </p>
             </div>
-            <h1 className="font-serif-display text-3xl md:text-4xl leading-[1.1]">
-              Empréstimo de <i>{nomeCliente}</i>
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Aberto em {fmtData(emprestimo.created_at)}
-              {renovavel && ciclosPagos > 0 && ` · ${ciclosPagos} ${ciclosPagos === 1 ? 'ciclo pago' : 'ciclos pagos'}`}
-            </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Phone className="mr-2 h-4 w-4" /> Cobrar via WhatsApp
-            </Button>
-          </div>
+          {waLink && (
+            <div>
+              <a href={waLink} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                  <Phone className="h-4 w-4" /> Cobrar via WhatsApp
+                </Button>
+              </a>
+            </div>
+          )}
         </CardContent>
       </Card>
 
