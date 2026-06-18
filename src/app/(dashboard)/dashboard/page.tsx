@@ -136,7 +136,10 @@ export default async function DashboardPage() {
         </Card>
 
         {kpis.slice(1).map(k => {
-          const isAtrasado = k.label === 'Em atraso' && totalVencido > 0
+          const isAtrasado   = k.label === 'Em atraso'      && totalVencido > 0
+          const isHoje       = k.label === 'A receber hoje' && totalHoje > 0
+          const href         = isAtrasado ? '/inadimplentes' : isHoje ? '/a-receber-hoje' : null
+          const hoverClass   = isAtrasado ? 'hover:border-destructive/50' : isHoje ? 'hover:border-foreground/40' : ''
           const inner = (
             <CardContent className="p-5">
               <div className="flex items-center gap-2">
@@ -146,10 +149,11 @@ export default async function DashboardPage() {
               <p className="text-3xl mt-3"><Money value={k.value} tone={k.tone} /></p>
               <p className="text-xs text-muted-foreground mt-1.5">{k.sub}</p>
               {isAtrasado && <p className="text-xs text-destructive mt-2">Ver detalhes →</p>}
+              {isHoje     && <p className="text-xs text-muted-foreground mt-2">Ver detalhes →</p>}
             </CardContent>
           )
-          return isAtrasado
-            ? <Link key={k.label} href="/inadimplentes"><Card className="hover:border-destructive/50 transition-colors cursor-pointer">{inner}</Card></Link>
+          return href
+            ? <Link key={k.label} href={href}><Card className={`${hoverClass} transition-colors cursor-pointer`}>{inner}</Card></Link>
             : <Card key={k.label}>{inner}</Card>
         })}
       </div>
