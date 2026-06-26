@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, RefreshCw, AlertTriangle, SplitSquareHorizontal, Calendar } from 'lucide-react'
+import { CheckCircle2, RefreshCw, AlertTriangle, SplitSquareHorizontal, Calendar, Percent } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,9 @@ import type { Parcela } from '@/types'
 
 const INPUT_CLS =
   'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/10'
+
+const INPUT_SM =
+  'h-8 w-24 rounded-md border border-input bg-background px-2.5 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20'
 
 interface Props {
   parcelaAberta: Parcela
@@ -28,31 +31,32 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
   const [pending, startTransition] = useTransition()
   const [modoParcial, setModoParcial] = useState(false)
   const [valorPago, setValorPago] = useState('')
+  const [taxaMoraInput, setTaxaMoraInput] = useState(
+    taxaMoraDiaria != null ? String(taxaMoraDiaria) : ''
+  )
 
   const hoje       = new Date().toISOString().split('T')[0]
   const vencida    = parcelaAberta.vencimento < hoje
   const valorJuros = Number(parcelaAberta.valor_juros ?? 0)
   const total      = Number(parcelaAberta.valor)
+  const taxa       = valorPrincipal > 0 ? valorJuros / valorPrincipal : 0
 
-  // Mora por atraso (juros simples diários)
-  const diasAtraso = (() => {
-    if (!vencida || !taxaMoraDiaria) return 0
+  // Mora por atraso (juros simples diários) — calculada a partir do input do usuário
+  const taxaMoraNum = parseFloat(taxaMoraInput) || 0
+  const diasAtraso  = (() => {
+    if (!vencida || taxaMoraNum <= 0) return 0
     const venc = new Date(parcelaAberta.vencimento + 'T12:00:00')
-    const now = new Date()
-    return Math.max(0, Math.floor((now.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24)))
+    return Math.max(0, Math.floor((Date.now() - venc.getTime()) / (1000 * 60 * 60 * 24)))
   })()
-  const mora = (taxaMoraDiaria && diasAtraso > 0)
-    ? Number((total * (taxaMoraDiaria / 100) * diasAtraso).toFixed(2))
-    : 0
+  const mora         = diasAtraso > 0 ? Number((total * (taxaMoraNum / 100) * diasAtraso).toFixed(2)) : 0
   const totalComMora = Number((total + mora).toFixed(2))
 
-  // Cálculo em tempo real do pagamento parcial (lógica intacta)
-  const vp         = parseFloat(valorPago) || 0
-  const abatimento = Math.max(0, vp - valorJuros)
-  const novoSaldo  = Math.max(0, valorPrincipal - abatimento)
-  const taxa       = valorPrincipal > 0 ? valorJuros / valorPrincipal : 0
-  const proxJuros  = Number((novoSaldo * taxa).toFixed(2))
-  const proxTotal  = Number((novoSaldo + proxJuros).toFixed(2))
+  // Cálculo pagamento parcial
+  const vp          = parseFloat(valorPago) || 0
+  const abatimento  = Math.max(0, vp - valorJuros)
+  const novoSaldo   = Math.max(0, valorPrincipal - abatimento)
+  const proxJuros   = Number((novoSaldo * taxa).toFixed(2))
+  const proxTotal   = Number((novoSaldo + proxJuros).toFixed(2))
   const parcialValido = vp >= valorJuros && vp > 0
 
   function handlePagarJuros() {
@@ -117,7 +121,7 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
           </Badge>
         ) : (
           <Badge variant="secondary" className="gap-1.5 bg-[var(--warning)]/15 text-[var(--warning-foreground)] border-transparent">
-            <Calendar className="h-3 w-3" /> Hoje
+            <Calendar className="h-3 w-3" /> A vencer
           </Badge>
         )}
       </div>
@@ -149,7 +153,7 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
             <div className="bg-[var(--warning)]" style={{ flex: valorJuros }} />
             {mora > 0 && <div className="bg-destructive" style={{ flex: mora }} />}
           </div>
-          <div className={mora > 0 ? 'grid grid-cols-3 gap-3 text-sm' : 'grid grid-cols-2 gap-6 text-sm'}>
+          <div className={cn('grid gap-3 text-sm', mora > 0 ? 'grid-cols-3' : 'grid-cols-2 gap-6')}>
             <div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
@@ -174,12 +178,45 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
               </div>
             )}
           </div>
-          {mora > 0 && (
-            <p className="text-xs text-destructive/80 bg-destructive/5 rounded-md px-3 py-2">
-              {diasAtraso} {diasAtraso === 1 ? 'dia' : 'dias'} de atraso × {taxaMoraDiaria}% ao dia = <strong><Money value={mora} /></strong> de mora
-            </p>
-          )}
         </div>
+
+        {/* Campo de mora — só aparece quando está vencida */}
+        {vencida && !modoParcial && (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 space-y-2">
+            <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {diasAtraso > 0
+                ? `${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} em atraso`
+                : 'Vencida hoje'}
+            </p>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Mora ao dia:</label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  max="100"
+                  placeholder="0.000"
+                  value={taxaMoraInput}
+                  onChange={e => setTaxaMoraInput(e.target.value)}
+                  className={INPUT_SM}
+                />
+                <Percent className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              {mora > 0 && (
+                <p className="text-xs text-destructive font-medium ml-1">
+                  = <Money value={mora} />
+                </p>
+              )}
+            </div>
+            {mora > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {diasAtraso} dias × {taxaMoraNum}% × {fmtMoeda(total)} = <strong className="text-destructive">{fmtMoeda(mora)}</strong> de mora
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Ações OU modo parcial */}
         {modoParcial ? (
@@ -261,12 +298,6 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
               Pagar só os juros rola o principal para o próximo mês.
             </p>
           </>
-        )}
-
-        {vencida && !modoParcial && (
-          <p className="text-xs text-destructive">
-            Esta cobrança está em atraso. Registre o pagamento ou role para o próximo mês.
-          </p>
         )}
       </CardContent>
     </Card>

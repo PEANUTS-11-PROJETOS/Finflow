@@ -20,20 +20,18 @@ import { UserPlus } from 'lucide-react'
 const INPUT_CLS = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
 const schemaPrice = z.object({
-  valor_principal:  z.coerce.number().positive('Informe o valor'),
-  taxa_juros:       z.coerce.number().min(0),
-  num_parcelas:     z.coerce.number().int().min(1).max(360),
-  data_inicio:      z.string().min(1, 'Informe a data'),
-  taxa_mora_diaria: z.coerce.number().min(0).max(100).optional().nullable(),
-  observacoes:      z.string().optional(),
+  valor_principal: z.coerce.number().positive('Informe o valor'),
+  taxa_juros:      z.coerce.number().min(0),
+  num_parcelas:    z.coerce.number().int().min(1).max(360),
+  data_inicio:     z.string().min(1, 'Informe a data'),
+  observacoes:     z.string().optional(),
 })
 
 const schemaRenovavel = z.object({
-  valor_principal:  z.coerce.number().positive('Informe o valor'),
-  taxa_juros:       z.coerce.number().min(0),
-  data_vencimento:  z.string().min(1, 'Informe o vencimento'),
-  taxa_mora_diaria: z.coerce.number().min(0).max(100).optional().nullable(),
-  observacoes:      z.string().optional(),
+  valor_principal: z.coerce.number().positive('Informe o valor'),
+  taxa_juros:      z.coerce.number().min(0),
+  data_vencimento: z.string().min(1, 'Informe o vencimento'),
+  observacoes:     z.string().optional(),
 })
 
 const schemaNovoCliente = z.object({
@@ -295,35 +293,18 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
                   )} />
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField control={formPrice.control} name="taxa_mora_diaria" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Juros de mora (% ao dia)
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">opcional</span>
-                      </FormLabel>
-                      <input type="number" step="0.001" min="0" max="100" placeholder="0.033"
-                        name={field.name} onBlur={field.onBlur}
-                        value={field.value ?? ''}
-                        onChange={e => field.onChange(e.target.value === '' ? null : e.target.value)}
-                        className={INPUT_CLS}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={formPrice.control} name="observacoes" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <input type="text" placeholder="Anotações..."
-                        name={field.name} onBlur={field.onBlur}
-                        value={field.value ?? ''}
-                        onChange={e => field.onChange(e.target.value)}
-                        className={INPUT_CLS}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+                <FormField control={formPrice.control} name="observacoes" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <input type="text" placeholder="Anotações..."
+                      name={field.name} onBlur={field.onBlur}
+                      value={field.value ?? ''}
+                      onChange={e => field.onChange(e.target.value)}
+                      className={INPUT_CLS}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
                 <div className="flex gap-3 pt-2">
                   <Button type="submit" disabled={formPrice.formState.isSubmitting}>
@@ -409,35 +390,18 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
                   </FormItem>
                 )} />
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField control={formRenovavel.control} name="taxa_mora_diaria" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Juros de mora (% ao dia)
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">opcional</span>
-                      </FormLabel>
-                      <input type="number" step="0.001" min="0" max="100" placeholder="0.033"
-                        name={field.name} onBlur={field.onBlur}
-                        value={field.value ?? ''}
-                        onChange={e => field.onChange(e.target.value === '' ? null : e.target.value)}
-                        className={INPUT_CLS}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={formRenovavel.control} name="observacoes" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <input type="text" placeholder="Anotações..."
-                        name={field.name} onBlur={field.onBlur}
-                        value={field.value ?? ''}
-                        onChange={e => field.onChange(e.target.value)}
-                        className={INPUT_CLS}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+                <FormField control={formRenovavel.control} name="observacoes" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <input type="text" placeholder="Anotações..."
+                      name={field.name} onBlur={field.onBlur}
+                      value={field.value ?? ''}
+                      onChange={e => field.onChange(e.target.value)}
+                      className={INPUT_CLS}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
                 <div className="flex gap-3 pt-2">
                   <Button type="submit" disabled={formRenovavel.formState.isSubmitting}>
