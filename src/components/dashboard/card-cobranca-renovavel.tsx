@@ -35,14 +35,17 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
   const total      = Number(parcelaAberta.valor)
   const taxa       = valorPrincipal > 0 ? valorJuros / valorPrincipal : 0
 
-  const mora         = Math.max(0, parseFloat(moraInput) || 0)
-  const totalComMora = Number((total + mora).toFixed(2))
-
+  // Dias de atraso completos: exclui o dia atual (pagamento feito hoje não conta)
   const diasAtraso = (() => {
     if (!vencida) return 0
     const venc = new Date(parcelaAberta.vencimento + 'T12:00:00')
-    return Math.max(0, Math.floor((Date.now() - venc.getTime()) / (1000 * 60 * 60 * 24)))
+    const dias = Math.max(0, Math.floor((Date.now() - venc.getTime()) / (1000 * 60 * 60 * 24)))
+    return Math.max(0, dias - 1)
   })()
+
+  const jurosAoDia   = Math.max(0, parseFloat(moraInput) || 0)
+  const mora         = Number((jurosAoDia * diasAtraso).toFixed(2))
+  const totalComMora = Number((total + mora).toFixed(2))
 
   // Cálculo pagamento parcial
   const vp          = parseFloat(valorPago) || 0
@@ -183,7 +186,7 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
                 : 'Vencida hoje'}
             </p>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">Mora (R$):</label>
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Juros ao dia:</label>
               <div className="relative flex items-center">
                 <span className="pointer-events-none absolute left-2.5 text-xs text-muted-foreground">R$</span>
                 <input
@@ -196,6 +199,11 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
                   className="h-8 w-32 rounded-md border border-input bg-background pl-8 pr-2.5 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                 />
               </div>
+              {mora > 0 && (
+                <p className="text-xs text-destructive font-medium">
+                  × {diasAtraso}d = <strong>{fmtMoeda(mora)}</strong>
+                </p>
+              )}
             </div>
           </div>
         )}
