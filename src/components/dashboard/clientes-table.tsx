@@ -57,6 +57,7 @@ export function ClientesTable({ clientes }: Props) {
               <TableRow
                 key={c.id}
                 className="cursor-pointer"
+                onMouseEnter={() => router.prefetch(`/clientes/${c.id}`)}
                 onClick={() => router.push(`/clientes/${c.id}`)}
               >
                 <TableCell>
