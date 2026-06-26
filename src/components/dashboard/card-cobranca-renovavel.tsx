@@ -149,7 +149,7 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
             <div className="bg-[var(--warning)]" style={{ flex: valorJuros }} />
             {mora > 0 && <div className="bg-destructive" style={{ flex: mora }} />}
           </div>
-          <div className={cn('grid gap-3 text-sm', mora > 0 ? 'grid-cols-3' : 'grid-cols-2 gap-6')}>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4 text-sm sm:grid-cols-3">
             <div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
