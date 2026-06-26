@@ -24,7 +24,6 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: 'Finflow',
   description: 'Gestão de empréstimos para credores · by Peanuts Labs',
-  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
