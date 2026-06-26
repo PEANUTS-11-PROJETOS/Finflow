@@ -7,6 +7,7 @@ import { Money } from '@/components/ui/money'
 import { fmtData } from '@/lib/utils'
 import { Users, HandCoins, AlertTriangle, TrendingUp, Calendar, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { PwaInstallBanner } from '@/components/dashboard/pwa-install-button'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -70,6 +71,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <PwaInstallBanner />
+
       <div>
         <h1 className="text-2xl">Painel</h1>
         <p className="text-sm text-muted-foreground mt-1 first-letter:uppercase">{dataExtenso} · visão geral da carteira</p>
