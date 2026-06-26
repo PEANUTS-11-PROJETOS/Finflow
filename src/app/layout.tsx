@@ -48,6 +48,11 @@ export default function RootLayout({
       lang="pt-br"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable}`}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#232830" />
+      </head>
       <body>
         {children}
         <script dangerouslySetInnerHTML={{ __html: `
