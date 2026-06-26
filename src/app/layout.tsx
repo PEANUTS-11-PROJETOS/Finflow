@@ -24,6 +24,19 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: 'Finflow',
   description: 'Gestão de empréstimos para credores · by Peanuts Labs',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Finflow',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png',   sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({

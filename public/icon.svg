@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background rounded square — cor primária escura do app -->
+  <rect width="512" height="512" rx="112" fill="#232830"/>
+
+  <!-- Letra F geométrica — cor cream do app -->
+  <!-- Barra vertical -->
+  <rect x="130" y="110" width="76" height="292" rx="10" fill="#F5F1E8"/>
+  <!-- Barra superior -->
+  <rect x="130" y="110" width="260" height="76" rx="10" fill="#F5F1E8"/>
+  <!-- Barra do meio -->
+  <rect x="130" y="228" width="192" height="68" rx="10" fill="#F5F1E8"/>
+
+  <!-- Ponto decorativo verde (acento de marca) -->
+  <circle cx="380" cy="360" r="38" fill="#4A8C5C"/>
+</svg>
