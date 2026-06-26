@@ -174,7 +174,6 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
                   parcelaAberta={parcelaAberta as Parcela}
                   valorPrincipal={Number(emprestimo.valor_principal)}
                   quitado={emprestimo.status === 'quitado'}
-                  taxaMoraDiaria={emprestimo.taxa_mora_diaria ?? null}
                 />
               )
             })()}

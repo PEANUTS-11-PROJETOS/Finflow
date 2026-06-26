@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, RefreshCw, AlertTriangle, SplitSquareHorizontal, Calendar, Percent } from 'lucide-react'
+import { CheckCircle2, RefreshCw, AlertTriangle, SplitSquareHorizontal, Calendar } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,24 +16,18 @@ import type { Parcela } from '@/types'
 const INPUT_CLS =
   'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/10'
 
-const INPUT_SM =
-  'h-8 w-24 rounded-md border border-input bg-background px-2.5 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20'
-
 interface Props {
   parcelaAberta: Parcela
   valorPrincipal: number
   quitado: boolean
-  taxaMoraDiaria?: number | null
 }
 
-export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, taxaMoraDiaria }: Props) {
+export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [modoParcial, setModoParcial] = useState(false)
   const [valorPago, setValorPago] = useState('')
-  const [taxaMoraInput, setTaxaMoraInput] = useState(
-    taxaMoraDiaria != null ? String(taxaMoraDiaria) : ''
-  )
+  const [moraInput, setMoraInput] = useState('')
 
   const hoje       = new Date().toISOString().split('T')[0]
   const vencida    = parcelaAberta.vencimento < hoje
@@ -41,15 +35,14 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
   const total      = Number(parcelaAberta.valor)
   const taxa       = valorPrincipal > 0 ? valorJuros / valorPrincipal : 0
 
-  // Mora por atraso (juros simples diários) — calculada a partir do input do usuário
-  const taxaMoraNum = parseFloat(taxaMoraInput) || 0
-  const diasAtraso  = (() => {
-    if (!vencida || taxaMoraNum <= 0) return 0
+  const mora         = Math.max(0, parseFloat(moraInput) || 0)
+  const totalComMora = Number((total + mora).toFixed(2))
+
+  const diasAtraso = (() => {
+    if (!vencida) return 0
     const venc = new Date(parcelaAberta.vencimento + 'T12:00:00')
     return Math.max(0, Math.floor((Date.now() - venc.getTime()) / (1000 * 60 * 60 * 24)))
   })()
-  const mora         = diasAtraso > 0 ? Number((total * (taxaMoraNum / 100) * diasAtraso).toFixed(2)) : 0
-  const totalComMora = Number((total + mora).toFixed(2))
 
   // Cálculo pagamento parcial
   const vp          = parseFloat(valorPago) || 0
@@ -172,7 +165,7 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
               <div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                  <span className="eyebrow">Mora ({diasAtraso}d)</span>
+                  <span className="eyebrow">Mora{diasAtraso > 0 ? ` (${diasAtraso}d)` : ''}</span>
                 </div>
                 <p className="mt-1.5 text-lg text-destructive"><Money value={mora} /></p>
               </div>
@@ -190,31 +183,20 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, 
                 : 'Vencida hoje'}
             </p>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">Mora ao dia:</label>
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Mora (R$):</label>
               <div className="relative flex items-center">
+                <span className="pointer-events-none absolute left-2.5 text-xs text-muted-foreground">R$</span>
                 <input
                   type="number"
-                  step="0.001"
+                  step="0.01"
                   min="0"
-                  max="100"
-                  placeholder="0.000"
-                  value={taxaMoraInput}
-                  onChange={e => setTaxaMoraInput(e.target.value)}
-                  className={INPUT_SM}
+                  placeholder="0,00"
+                  value={moraInput}
+                  onChange={e => setMoraInput(e.target.value)}
+                  className="h-8 w-32 rounded-md border border-input bg-background pl-8 pr-2.5 text-sm tabular-nums outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                 />
-                <Percent className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              {mora > 0 && (
-                <p className="text-xs text-destructive font-medium ml-1">
-                  = <Money value={mora} />
-                </p>
-              )}
             </div>
-            {mora > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {diasAtraso} dias × {taxaMoraNum}% × {fmtMoeda(total)} = <strong className="text-destructive">{fmtMoeda(mora)}</strong> de mora
-              </p>
-            )}
           </div>
         )}
 
