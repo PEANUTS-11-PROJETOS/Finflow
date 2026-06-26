@@ -1,4 +1,4 @@
-const CACHE = 'finflow-v1'
+const CACHE = 'finflow-v3'
 
 self.addEventListener('install', (e) => {
   self.skipWaiting()

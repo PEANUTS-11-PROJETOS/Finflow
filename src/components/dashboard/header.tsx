@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { iniciais, avatarColor } from '@/lib/avatar-color'
 import { estadoConta, trialDiasRestantes } from '@/lib/planos'
 import { fmtData } from '@/lib/utils'
+import { PwaInstallButton } from './pwa-install-button'
 
 export async function Header() {
   const supabase = await createClient()
@@ -33,6 +34,7 @@ export async function Header() {
 
   return (
     <header className="flex flex-1 items-center justify-end bg-background px-6 gap-3">
+      <PwaInstallButton />
       <Badge
         variant="secondary"
         className="gap-1.5 bg-[var(--success)]/10 text-[var(--success)] border-transparent"
