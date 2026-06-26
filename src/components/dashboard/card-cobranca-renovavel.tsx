@@ -20,9 +20,10 @@ interface Props {
   parcelaAberta: Parcela
   valorPrincipal: number
   quitado: boolean
+  taxaMoraDiaria?: number | null
 }
 
-export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }: Props) {
+export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado, taxaMoraDiaria }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [modoParcial, setModoParcial] = useState(false)
@@ -32,6 +33,18 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
   const vencida    = parcelaAberta.vencimento < hoje
   const valorJuros = Number(parcelaAberta.valor_juros ?? 0)
   const total      = Number(parcelaAberta.valor)
+
+  // Mora por atraso (juros simples diários)
+  const diasAtraso = (() => {
+    if (!vencida || !taxaMoraDiaria) return 0
+    const venc = new Date(parcelaAberta.vencimento + 'T12:00:00')
+    const now = new Date()
+    return Math.max(0, Math.floor((now.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24)))
+  })()
+  const mora = (taxaMoraDiaria && diasAtraso > 0)
+    ? Number((total * (taxaMoraDiaria / 100) * diasAtraso).toFixed(2))
+    : 0
+  const totalComMora = Number((total + mora).toFixed(2))
 
   // Cálculo em tempo real do pagamento parcial (lógica intacta)
   const vp         = parseFloat(valorPago) || 0
@@ -113,18 +126,30 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
         {/* Hero: total devido */}
         <div>
           <p className="eyebrow">Total devido</p>
-          <p className="mt-1 leading-none text-5xl">
-            <Money value={total} display />
-          </p>
+          {mora > 0 ? (
+            <div className="space-y-0.5">
+              <p className="mt-1 leading-none text-5xl">
+                <Money value={totalComMora} display />
+              </p>
+              <p className="text-xs text-muted-foreground line-through">
+                <Money value={total} /> sem mora
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1 leading-none text-5xl">
+              <Money value={total} display />
+            </p>
+          )}
         </div>
 
-        {/* Decomposição principal / juros */}
+        {/* Decomposição principal / juros / mora */}
         <div className="border-y py-4 space-y-3">
           <div className="flex h-2 gap-1 overflow-hidden rounded-full">
             <div className="bg-foreground" style={{ flex: valorPrincipal }} />
             <div className="bg-[var(--warning)]" style={{ flex: valorJuros }} />
+            {mora > 0 && <div className="bg-destructive" style={{ flex: mora }} />}
           </div>
-          <div className="grid grid-cols-2 gap-6 text-sm">
+          <div className={mora > 0 ? 'grid grid-cols-3 gap-3 text-sm' : 'grid grid-cols-2 gap-6 text-sm'}>
             <div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
@@ -139,7 +164,21 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
               </div>
               <p className="mt-1.5 text-lg"><Money value={valorJuros} tone="warning" /></p>
             </div>
+            {mora > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                  <span className="eyebrow">Mora ({diasAtraso}d)</span>
+                </div>
+                <p className="mt-1.5 text-lg text-destructive"><Money value={mora} /></p>
+              </div>
+            )}
           </div>
+          {mora > 0 && (
+            <p className="text-xs text-destructive/80 bg-destructive/5 rounded-md px-3 py-2">
+              {diasAtraso} {diasAtraso === 1 ? 'dia' : 'dias'} de atraso × {taxaMoraDiaria}% ao dia = <strong><Money value={mora} /></strong> de mora
+            </p>
+          )}
         </div>
 
         {/* Ações OU modo parcial */}
@@ -213,7 +252,7 @@ export function CardCobrancaRenovavel({ parcelaAberta, valorPrincipal, quitado }
                 className="flex h-auto flex-col items-start gap-1.5 py-3 px-3 text-left bg-[var(--success)] text-[var(--success-foreground)] hover:bg-[var(--success)]/90">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="text-xs font-semibold">Pagou tudo</span>
-                <span className="text-[11px] opacity-85"><Money value={total} /></span>
+                <span className="text-[11px] opacity-85"><Money value={totalComMora} /></span>
               </Button>
             </div>
 

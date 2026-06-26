@@ -31,24 +31,26 @@ export async function criarEmprestimoAction(formData: FormData) {
 // ─── Tabela Price ──────────────────────────────────────────────────────────────
 
 const schemaPrice = z.object({
-  tipo:            z.literal('price'),
-  cliente_id:      z.string().uuid('Selecione um cliente'),
-  valor_principal: z.coerce.number().positive('Informe o valor'),
-  taxa_juros:      z.coerce.number().min(0, 'Taxa inválida'),
-  num_parcelas:    z.coerce.number().int().min(1).max(360),
-  data_inicio:     z.string().min(1, 'Informe a data'),
-  observacoes:     z.string().optional(),
+  tipo:             z.literal('price'),
+  cliente_id:       z.string().uuid('Selecione um cliente'),
+  valor_principal:  z.coerce.number().positive('Informe o valor'),
+  taxa_juros:       z.coerce.number().min(0, 'Taxa inválida'),
+  num_parcelas:     z.coerce.number().int().min(1).max(360),
+  data_inicio:      z.string().min(1, 'Informe a data'),
+  taxa_mora_diaria: z.coerce.number().min(0).max(100).optional().nullable(),
+  observacoes:      z.string().optional(),
 })
 
 // ─── Renovável ────────────────────────────────────────────────────────────────
 
 const schemaRenovavel = z.object({
-  tipo:            z.literal('renovavel'),
-  cliente_id:      z.string().uuid('Selecione um cliente'),
-  valor_principal: z.coerce.number().positive('Informe o valor'),
-  taxa_juros:      z.coerce.number().min(0, 'Taxa inválida'),
-  data_vencimento: z.string().min(1, 'Informe o vencimento'),
-  observacoes:     z.string().optional(),
+  tipo:             z.literal('renovavel'),
+  cliente_id:       z.string().uuid('Selecione um cliente'),
+  valor_principal:  z.coerce.number().positive('Informe o valor'),
+  taxa_juros:       z.coerce.number().min(0, 'Taxa inválida'),
+  data_vencimento:  z.string().min(1, 'Informe o vencimento'),
+  taxa_mora_diaria: z.coerce.number().min(0).max(100).optional().nullable(),
+  observacoes:      z.string().optional(),
 })
 
 const schemaEmprestimo = z.discriminatedUnion('tipo', [schemaPrice, schemaRenovavel])
@@ -68,6 +70,7 @@ export async function criarEmprestimo(data: EmprestimoInput) {
     const { data: emp, error } = await supabase.from('emprestimos').insert({
       credor_id: user.id, cliente_id, tipo: 'price',
       valor_principal, taxa_juros, num_parcelas, data_inicio,
+      taxa_mora_diaria: parsed.data.taxa_mora_diaria ?? null,
       observacoes: observacoes || null,
     }).select('id').single()
 
@@ -97,6 +100,7 @@ export async function criarEmprestimo(data: EmprestimoInput) {
       credor_id: user.id, cliente_id, tipo: 'renovavel',
       valor_principal, taxa_juros, num_parcelas: null,
       data_inicio: data_vencimento,
+      taxa_mora_diaria: parsed.data.taxa_mora_diaria ?? null,
       observacoes: observacoes || null,
     }).select('id').single()
 

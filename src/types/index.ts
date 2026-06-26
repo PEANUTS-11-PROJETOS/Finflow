@@ -34,6 +34,7 @@ export interface Emprestimo {
   data_inicio: string
   status: 'ativo' | 'quitado' | 'inadimplente'
   observacoes: string | null
+  taxa_mora_diaria: number | null
   created_at: string
   clientes?: Pick<Cliente, 'id' | 'nome'>
 }
