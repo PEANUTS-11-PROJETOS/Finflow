@@ -9,16 +9,26 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+declare global {
+  interface Window {
+    __pwaPrompt: BeforeInstallPromptEvent | null
+  }
+}
+
 export function PwaInstallButton() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault()
-      setPrompt(e as BeforeInstallPromptEvent)
+    // Pega o evento já capturado antes do React montar
+    if (window.__pwaPrompt) {
+      setPrompt(window.__pwaPrompt)
     }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+
+    const handler = () => {
+      if (window.__pwaPrompt) setPrompt(window.__pwaPrompt)
+    }
+    window.addEventListener('pwaready', handler)
+    return () => window.removeEventListener('pwaready', handler)
   }, [])
 
   if (!prompt) return null
@@ -31,6 +41,7 @@ export function PwaInstallButton() {
       onClick={async () => {
         await prompt.prompt()
         setPrompt(null)
+        window.__pwaPrompt = null
       }}
     >
       <Download className="h-4 w-4" />

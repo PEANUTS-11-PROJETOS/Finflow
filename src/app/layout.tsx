@@ -48,18 +48,21 @@ export default function RootLayout({
       lang="pt-br"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable}`}
     >
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#232830" />
-      </head>
       <body>
         {children}
+        {/* Captura beforeinstallprompt antes do React montar e registra SW */}
         <script dangerouslySetInnerHTML={{ __html: `
+          window.__pwaPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pwaPrompt = e;
+            window.dispatchEvent(new Event('pwaready'));
+          });
           if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js').catch(() => {})
-            })
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
+                .catch(function() {});
+            });
           }
         `}} />
       </body>
