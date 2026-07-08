@@ -42,7 +42,8 @@ export default function PrivacidadePage() {
             <h3 className="font-medium text-foreground mt-4 mb-2">Dados do credor (titular usuário direto)</h3>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>Nome, e-mail e senha — para criação e autenticação da conta</li>
-              <li>Telefone — opcional, para futuras notificações por WhatsApp</li>
+              <li>Telefone — opcional, para contato e suporte</li>
+              <li>ID de conversa do Telegram — opcional, caso você conecte sua conta para receber as notificações diárias</li>
               <li>Dados de uso da plataforma (logs de acesso, ações realizadas)</li>
               <li>Dados de pagamento — apenas confirmação de PIX recebido; não coletamos número de cartão</li>
             </ul>
@@ -67,7 +68,7 @@ export default function PrivacidadePage() {
             <ul className="list-disc pl-5 space-y-2">
               <li><strong>Execução de contrato (Art. 7º, V):</strong> para os dados estritamente necessários para fornecer o serviço contratado.</li>
               <li><strong>Cumprimento de obrigação legal (Art. 7º, II):</strong> retenção mínima de logs e dados fiscais.</li>
-              <li><strong>Consentimento (Art. 7º, I):</strong> para envio de comunicações de marketing e para envio de notificações por WhatsApp.</li>
+              <li><strong>Consentimento (Art. 7º, I):</strong> para envio de comunicações de marketing e para envio de notificações pelo Telegram.</li>
               <li><strong>Legítimo interesse (Art. 7º, IX):</strong> para análise de uso anônima e prevenção a fraudes, ponderando seus direitos.</li>
               <li><strong>Proteção ao crédito (Art. 7º, X):</strong> para os dados financeiros e de identificação dos devedores cadastrados, sob responsabilidade do credor.</li>
             </ul>
@@ -78,7 +79,7 @@ export default function PrivacidadePage() {
             <ul className="list-disc pl-5 space-y-2 mt-3">
               <li><strong>Supabase Inc.</strong> — banco de dados, autenticação e armazenamento de arquivos (servidores nos EUA).</li>
               <li><strong>Vercel Inc.</strong> — hospedagem da aplicação web (servidores nos EUA).</li>
-              <li><strong>Evolution API</strong> (hospedada no Railway) — envio das futuras notificações por WhatsApp, mediante seu consentimento expresso.</li>
+              <li><strong>Telegram Messenger Inc.</strong> — envio das notificações diárias, caso você conecte sua conta do Telegram, mediante seu consentimento expresso.</li>
               <li><strong>Google LLC</strong> — fontes web (Google Fonts) carregadas pelo navegador. O IP do usuário pode ser exposto ao Google nesse processo.</li>
             </ul>
             <p className="mt-3">

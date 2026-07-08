@@ -11,7 +11,7 @@ export const PLANO = {
     'Exportação CSV',
     'Histórico completo',
     'Suporte prioritário via WhatsApp',
-    'Notificações WhatsApp diárias às 8h',
+    'Notificações no Telegram diárias às 8h',
   ],
   features_em_breve: [],
 } as const

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PLANO, estadoConta, trialDiasRestantes } from '@/lib/planos'
 import { fmtData, fmtMoeda } from '@/lib/utils'
-import { Check, Download, HelpCircle, Lock, MessageCircle, Sparkles } from 'lucide-react'
+import { Check, Download, HelpCircle, Lock, MessageCircle, Send, Sparkles } from 'lucide-react'
+import { TelegramConnect } from '@/components/dashboard/telegram-connect'
 
 const WHATSAPP_URL = 'https://wa.me/5511989408375'
 const wa = (msg: string) => `${WHATSAPP_URL}?text=${encodeURIComponent(msg)}`
@@ -17,7 +18,7 @@ export default async function ConfiguracoesPage() {
 
   const { data: credor } = await supabase
     .from('credores')
-    .select('nome, email, plano, ciclo_plano, data_vencimento, created_at')
+    .select('nome, email, plano, ciclo_plano, data_vencimento, created_at, telegram_chat_id')
     .eq('id', user.id)
     .single()
 
@@ -80,15 +81,15 @@ export default async function ConfiguracoesPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-base">Notificações WhatsApp</CardTitle>
-            <Badge variant="secondary" className="ml-auto text-[10px] uppercase tracking-wide">Em breve</Badge>
+            <Send className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-base">Notificações Telegram</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Em breve você poderá receber todo dia às 8h uma mensagem no WhatsApp com os vencimentos do dia e dos próximos 3 dias — sem precisar abrir o app.
-          </p>
+          <TelegramConnect
+            conectado={!!credor?.telegram_chat_id}
+            credorId={user.id}
+          />
         </CardContent>
       </Card>
 

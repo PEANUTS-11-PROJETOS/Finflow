@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { enviarWhatsapp } from '@/lib/whatsapp'
+import { enviarTelegram, escaparHtml } from '@/lib/telegram'
 import { fmtMoeda } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
@@ -18,13 +18,13 @@ export async function GET(req: NextRequest) {
   const hojeStr    = hoje.toISOString().split('T')[0]
   const em3diasStr = em3dias.toISOString().split('T')[0]
 
-  // Busca credores ativos com notificações habilitadas e telefone cadastrado
+  // Busca credores ativos com notificações habilitadas e Telegram conectado
   const { data: credores } = await supabase
     .from('credores')
-    .select('id, nome, telefone')
+    .select('id, nome, telegram_chat_id')
     .eq('whatsapp_notificacoes', true)
     .eq('plano', 'ativo')
-    .not('telefone', 'is', null)
+    .not('telegram_chat_id', 'is', null)
     .not('data_vencimento', 'is', null)
     .gte('data_vencimento', hojeStr)
 
@@ -59,27 +59,27 @@ export async function GET(req: NextRequest) {
       return (Array.isArray(cli) ? cli[0]?.nome : cli?.nome) ?? 'Cliente'
     }
 
-    let msg = `📊 *Resumo FinFlow — ${hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}*\n\n`
+    let msg = `📊 <b>Resumo FinFlow — ${hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</b>\n\n`
 
     if (hoje_list.length) {
-      msg += `*Vencendo hoje:*\n`
-      msg += hoje_list.map(p => `• ${nomeCliente(p)} — ${fmtMoeda(p.valor)}`).join('\n')
-      msg += `\n\n💰 Total hoje: *${fmtMoeda(totalHoje)}*\n`
+      msg += `<b>Vencendo hoje:</b>\n`
+      msg += hoje_list.map(p => `• ${escaparHtml(nomeCliente(p))} — ${fmtMoeda(p.valor)}`).join('\n')
+      msg += `\n\n💰 Total hoje: <b>${fmtMoeda(totalHoje)}</b>\n`
     } else {
       msg += `✅ Nenhum vencimento hoje.\n`
     }
 
     if (proximas.length) {
-      msg += `\n*Próximos 3 dias:*\n`
+      msg += `\n<b>Próximos 3 dias:</b>\n`
       msg += proximas.map(p => {
         const venc = new Date(p.vencimento + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-        return `• ${nomeCliente(p)} — ${fmtMoeda(p.valor)} (${venc})`
+        return `• ${escaparHtml(nomeCliente(p))} — ${fmtMoeda(p.valor)} (${venc})`
       }).join('\n')
     }
 
-    msg += `\n\n_FinFlow · Gestão de Empréstimos_`
+    msg += `\n\n<i>FinFlow · Gestão de Empréstimos</i>`
 
-    const ok = await enviarWhatsapp(credor.telefone!, msg)
+    const ok = await enviarTelegram(credor.telegram_chat_id!, msg)
     if (ok) enviados++
   }
 

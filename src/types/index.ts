@@ -9,6 +9,7 @@ export interface Credor {
   ativo: boolean
   telefone: string | null
   whatsapp_notificacoes: boolean
+  telegram_chat_id: string | null
   created_at: string
 }
 
