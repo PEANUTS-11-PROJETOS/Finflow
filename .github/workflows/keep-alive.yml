@@ -1,0 +1,34 @@
+name: Supabase Keep-Alive
+
+# Mantém o projeto Supabase (plano free) ativo, evitando a pausa
+# automática após 7 dias sem atividade no banco.
+# Roda a cada 3 dias e também pode ser disparado manualmente.
+
+on:
+  schedule:
+    - cron: '0 6 */3 * *' # às 06:00 UTC, a cada 3 dias
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          echo "Consultando o Supabase para registrar atividade..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/credores?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "HTTP status: $HTTP_CODE"
+          # 200 (dados) e 206 (partial) são sucesso; qualquer resposta do
+          # PostgREST já toca o banco e conta como atividade.
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+            echo "✅ Keep-alive OK — banco consultado com sucesso."
+          else
+            echo "❌ Resposta inesperada ($HTTP_CODE). Verifique os secrets."
+            exit 1
+          fi
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
