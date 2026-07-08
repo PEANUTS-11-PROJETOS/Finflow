@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enviarTelegram, escaparHtml } from '@/lib/telegram'
+import { estadoConta } from '@/lib/planos'
 import { fmtMoeda } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
@@ -18,15 +19,13 @@ export async function GET(req: NextRequest) {
   const hojeStr    = hoje.toISOString().split('T')[0]
   const em3diasStr = em3dias.toISOString().split('T')[0]
 
-  // Busca credores ativos com notificações habilitadas e Telegram conectado
+  // Credores com notificações habilitadas e Telegram conectado.
+  // Trial e ativo recebem; expirados são filtrados no loop via estadoConta.
   const { data: credores } = await supabase
     .from('credores')
-    .select('id, nome, telegram_chat_id')
+    .select('id, nome, telegram_chat_id, plano, created_at, data_vencimento')
     .eq('whatsapp_notificacoes', true)
-    .eq('plano', 'ativo')
     .not('telegram_chat_id', 'is', null)
-    .not('data_vencimento', 'is', null)
-    .gte('data_vencimento', hojeStr)
 
   if (!credores?.length) {
     return NextResponse.json({ ok: true, enviados: 0 })
@@ -35,6 +34,9 @@ export async function GET(req: NextRequest) {
   let enviados = 0
 
   for (const credor of credores) {
+    // Não notifica contas expiradas (trial vencido ou plano lapso)
+    if (estadoConta(credor.plano, credor.created_at, credor.data_vencimento) === 'expirado') continue
+
     const { data: parcelas } = await supabase
       .from('parcelas')
       .select('vencimento, valor, emprestimos(clientes(nome))')
