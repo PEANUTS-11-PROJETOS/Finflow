@@ -2,7 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request })
+  const { pathname } = request.nextUrl
+
+  // Endpoints de API com autenticação própria (cron via Bearer CRON_SECRET)
+  // não passam pelo controle de sessão — senão seriam redirecionados p/ login.
+  if (pathname.startsWith('/api/cron')) {
+    return NextResponse.next({ request })
+  }
+
+  const response = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +30,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
   const rotasPublicas = ['/', '/pricing', '/login', '/signup']
   const isPublica = rotasPublicas.includes(pathname)
 
