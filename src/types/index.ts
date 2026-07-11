@@ -51,5 +51,6 @@ export interface Parcela {
   pago: boolean
   rolado: boolean
   data_pagamento: string | null
+  baixa: 'tudo' | 'parcial' | 'juros' | null
   created_at: string
 }
