@@ -1,5 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { CheckCircle2, RefreshCw, SplitSquareHorizontal, MessageCircle } from 'lucide-react'
@@ -12,6 +13,7 @@ import { ParcialModal } from './parcial-modal'
 
 export interface PautaItem {
   parcelaId: string
+  emprestimoId: string
   tipo: 'price' | 'renovavel'
   clienteNome: string
   clienteTelefone: string | null
@@ -61,18 +63,21 @@ export function PautaRow({ item }: { item: PautaItem }) {
       'flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:gap-4',
       baixado && 'opacity-60',
     )}>
-      {/* Cliente + valores */}
-      <div className="flex items-center gap-3 sm:flex-1 sm:min-w-0">
+      {/* Cliente + valores → abre o empréstimo */}
+      <Link
+        href={`/emprestimos/${item.emprestimoId}`}
+        className="group flex items-center gap-3 rounded-lg -mx-1 px-1 py-0.5 sm:flex-1 sm:min-w-0 hover:bg-muted/50 transition-colors"
+      >
         <div className="h-10 w-10 flex-none rounded-full bg-muted text-foreground/80 flex items-center justify-center text-sm font-semibold">
           {iniciais(item.clienteNome)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-medium truncate">{item.clienteNome}</p>
+          <p className="font-medium truncate group-hover:underline">{item.clienteNome}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Pegou <Money value={item.valorPego} /> · Parcela <Money value={item.valorParcela} />
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Ações / estado */}
       {baixado ? (

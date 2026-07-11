@@ -46,6 +46,7 @@ export default async function CarteiraPage({
     if (!emp?.clientes) continue
     itens.push({
       parcelaId: p.id,
+      emprestimoId: emp.id,
       tipo: emp.tipo,
       clienteNome: emp.clientes.nome,
       clienteTelefone: emp.clientes.telefone,
