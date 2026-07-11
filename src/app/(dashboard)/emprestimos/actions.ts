@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { calcularParcelas } from '@/lib/utils'
+import { calcularParcelasFixas } from '@/lib/utils'
 
 export async function criarEmprestimoAction(formData: FormData) {
   const tipo = formData.get('tipo') as string
@@ -76,7 +76,8 @@ export async function criarEmprestimo(data: EmprestimoInput) {
 
     if (error || !emp) return { error: error?.message ?? 'Erro ao criar' }
 
-    const parcelas = calcularParcelas(valor_principal, taxa_juros, num_parcelas, new Date(data_inicio + 'T12:00:00'))
+    const jurosTotal = Number((valor_principal * (taxa_juros / 100)).toFixed(2))
+    const parcelas = calcularParcelasFixas(valor_principal, jurosTotal, num_parcelas, new Date(data_inicio + 'T12:00:00'))
     const { error: pe } = await supabase.from('parcelas').insert(
       parcelas.map(p => ({
         emprestimo_id: emp.id, credor_id: user.id,
