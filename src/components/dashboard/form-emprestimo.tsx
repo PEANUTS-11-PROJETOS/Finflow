@@ -29,7 +29,7 @@ const schemaPrice = z.object({
 
 const schemaRenovavel = z.object({
   valor_principal: z.coerce.number().positive('Informe o valor'),
-  taxa_juros:      z.coerce.number().min(0),
+  juros_valor:     z.coerce.number().min(0),
   data_vencimento: z.string().min(1, 'Informe o vencimento'),
   observacoes:     z.string().optional(),
 })
@@ -179,7 +179,7 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
     resolver: zodResolver(schemaRenovavel) as unknown as Resolver<RenovavelValues>,
     defaultValues: {
       valor_principal: '' as unknown as number,
-      taxa_juros:      '' as unknown as number,
+      juros_valor:     '' as unknown as number,
       data_vencimento: '',
       observacoes: '',
     },
@@ -193,8 +193,9 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
     return (Number(vp) * t * Math.pow(1 + t, Number(vn))) / (Math.pow(1 + t, Number(vn)) - 1)
   })()
 
-  const [rvp, rtr] = useWatch({ control: formRenovavel.control, name: ['valor_principal', 'taxa_juros'] })
-  const jurosRenovavel = (rvp && Number(rvp) > 0 && rtr != null) ? Number(rvp) * (Number(rtr) / 100) : null
+  const [rvp, rjv] = useWatch({ control: formRenovavel.control, name: ['valor_principal', 'juros_valor'] })
+  const jurosRenovavel = (rjv != null && Number(rjv) > 0) ? Number(rjv) : null
+  const taxaEquivRenovavel = (jurosRenovavel != null && Number(rvp) > 0) ? (jurosRenovavel / Number(rvp)) * 100 : null
 
   const nomeClientePrice     = clientes.find(c => c.id === clientePrice)?.nome
   const nomeClienteRenovavel = clientes.find(c => c.id === clienteRenovavel)?.nome
@@ -210,7 +211,18 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
 
   async function onSubmitRenovavel(values: RenovavelValues) {
     if (!clienteRenovavel) { toast.error('Selecione um cliente'); return }
-    const result = await criarEmprestimo({ ...values, tipo: 'renovavel' as const, cliente_id: clienteRenovavel })
+    const principal = Number(values.valor_principal)
+    if (!principal || principal <= 0) { toast.error('Informe o valor principal'); return }
+    // Usuário digita o juros em R$; convertemos para taxa (%) — o banco guarda a taxa.
+    const taxa_juros = Number(((Number(values.juros_valor) / principal) * 100).toFixed(4))
+    const result = await criarEmprestimo({
+      tipo: 'renovavel' as const,
+      cliente_id: clienteRenovavel,
+      valor_principal: values.valor_principal,
+      taxa_juros,
+      data_vencimento: values.data_vencimento,
+      observacoes: values.observacoes,
+    })
     if (result?.error) { toast.error(typeof result.error === 'string' ? result.error : 'Verifique os campos.'); return }
     toast.success('Empréstimo renovável criado!')
     router.push(`/emprestimos/${result.id}`)
@@ -363,10 +375,10 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={formRenovavel.control} name="taxa_juros" render={({ field }) => (
+                  <FormField control={formRenovavel.control} name="juros_valor" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Taxa de juros (% a.m.) *</FormLabel>
-                      <input type="number" step="0.01" min="0" placeholder="5.00"
+                      <FormLabel>Juros mensal (R$) *</FormLabel>
+                      <input type="number" step="0.01" min="0" placeholder="150.00"
                         name={field.name} onBlur={field.onBlur}
                         value={field.value ?? ''}
                         onChange={e => field.onChange(e.target.value)}
@@ -424,7 +436,13 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
               )}
               {jurosRenovavel !== null && Number(rvp) > 0 ? (
                 <>
-                  <div><p className="text-xs text-muted-foreground">Juros do período</p><p className="text-2xl font-bold text-amber-600">{fmtMoeda(jurosRenovavel)}</p></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Juros do período</p>
+                    <p className="text-2xl font-bold text-amber-600">{fmtMoeda(jurosRenovavel)}</p>
+                    {taxaEquivRenovavel != null && (
+                      <p className="text-xs text-muted-foreground mt-0.5">equivale a {taxaEquivRenovavel.toFixed(2)}% a.m.</p>
+                    )}
+                  </div>
                   <div><p className="text-xs text-muted-foreground">Total se pagar tudo</p><p className="text-lg font-semibold">{fmtMoeda(Number(rvp) + jurosRenovavel)}</p></div>
                   <div className="border-t pt-3 text-xs text-muted-foreground">
                     Se pagar só os juros ({fmtMoeda(jurosRenovavel)}), o principal de {fmtMoeda(Number(rvp))} rola para o mês seguinte.
