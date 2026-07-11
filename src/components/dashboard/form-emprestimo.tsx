@@ -155,7 +155,7 @@ function ClienteSelect({
 
 export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
   const router = useRouter()
-  const [tipo, setTipo] = useState<'price' | 'renovavel'>('price')
+  const [tipo, setTipo] = useState<'price' | 'renovavel'>('renovavel')
   const [clientePrice, setClientePrice] = useState('')
   const [clienteRenovavel, setClienteRenovavel] = useState('')
   const [clientes, setClientes] = useState(clientesIniciais)
@@ -243,8 +243,8 @@ export function FormEmprestimo({ clientes: clientesIniciais }: Props) {
     <div className="space-y-6">
       <Tabs value={tipo} onValueChange={v => setTipo(v as 'price' | 'renovavel')}>
         <TabsList>
-          <TabsTrigger value="price">Parcelas fixas (juros fixo)</TabsTrigger>
           <TabsTrigger value="renovavel">Renovável (juros mensais)</TabsTrigger>
+          <TabsTrigger value="price">Parcelas fixas (juros fixo)</TabsTrigger>
         </TabsList>
       </Tabs>
 
