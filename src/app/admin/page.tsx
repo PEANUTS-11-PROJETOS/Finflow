@@ -12,7 +12,7 @@ const TEST_EMAIL = 'soaresvinicius1112@gmail.com'
 export default async function AdminPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
+  if (!user || user.email !== ADMIN_EMAIL) redirect('/carteira')
 
   const admin = createAdminClient()
 

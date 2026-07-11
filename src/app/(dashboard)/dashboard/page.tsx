@@ -141,7 +141,7 @@ export default async function DashboardPage() {
         {kpis.slice(1).map(k => {
           const isAtrasado   = k.label === 'Em atraso'      && totalVencido > 0
           const isHoje       = k.label === 'A receber hoje' && totalHoje > 0
-          const href         = isAtrasado ? '/inadimplentes' : isHoje ? '/a-receber-hoje' : null
+          const href         = isAtrasado ? '/inadimplentes' : isHoje ? '/carteira' : null
           const hoverClass   = isAtrasado ? 'hover:border-destructive/50' : isHoje ? 'hover:border-foreground/40' : ''
           const inner = (
             <CardContent className="p-5">

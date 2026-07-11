@@ -32,7 +32,7 @@ export function LoginForm() {
       setErro('Email ou senha incorretos.')
       return
     }
-    router.push('/dashboard')
+    router.push('/carteira')
     router.refresh()
   }
 

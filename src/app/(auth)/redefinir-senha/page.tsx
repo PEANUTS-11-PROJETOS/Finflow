@@ -24,7 +24,7 @@ export default function RedefinirSenhaPage() {
       setErro('Não foi possível redefinir a senha. O link pode ter expirado.')
       return
     }
-    router.push('/dashboard')
+    router.push('/carteira')
   }
 
   return (
