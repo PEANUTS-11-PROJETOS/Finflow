@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { calcularParcelas } from '@/lib/utils'
+import { calcularParcelasFixas } from '@/lib/utils'
 
 export async function criarEmprestimoAction(formData: FormData) {
   const tipo = formData.get('tipo') as string
@@ -76,7 +76,8 @@ export async function criarEmprestimo(data: EmprestimoInput) {
 
     if (error || !emp) return { error: error?.message ?? 'Erro ao criar' }
 
-    const parcelas = calcularParcelas(valor_principal, taxa_juros, num_parcelas, new Date(data_inicio + 'T12:00:00'))
+    const jurosTotal = Number((valor_principal * (taxa_juros / 100)).toFixed(2))
+    const parcelas = calcularParcelasFixas(valor_principal, jurosTotal, num_parcelas, new Date(data_inicio + 'T12:00:00'))
     const { error: pe } = await supabase.from('parcelas').insert(
       parcelas.map(p => ({
         emprestimo_id: emp.id, credor_id: user.id,
@@ -148,18 +149,19 @@ export async function pagarParcial(parcelaId: string, valorPago: number) {
   if (novoSaldo <= 0) {
     // Pagamento cobriu tudo — quitar
     await supabase.from('parcelas')
-      .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0] })
+      .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0], baixa: 'parcial' })
       .eq('id', parcelaId)
     await supabase.from('emprestimos')
       .update({ status: 'quitado' })
       .eq('id', emp.id).eq('credor_id', user.id)
     revalidatePath(`/emprestimos/${emp.id}`)
+    revalidatePath('/carteira')
     return { success: true, quitado: true }
   }
 
   // Marcar parcela como paga
   const { error: e1 } = await supabase.from('parcelas')
-    .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0] })
+    .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0], baixa: 'parcial' })
     .eq('id', parcelaId)
   if (e1) return { error: e1.message }
 
@@ -189,6 +191,7 @@ export async function pagarParcial(parcelaId: string, valorPago: number) {
 
   revalidatePath(`/emprestimos/${emp.id}`)
   revalidatePath('/emprestimos')
+  revalidatePath('/carteira')
   return { success: true, quitado: false, novoSaldo, novoJuros }
 }
 
@@ -211,7 +214,7 @@ export async function pagarJuros(parcelaId: string) {
   proxVenc.setMonth(proxVenc.getMonth() + 1)
 
   const { error: e1 } = await supabase.from('parcelas')
-    .update({ rolado: true, data_pagamento: new Date().toISOString().split('T')[0] })
+    .update({ rolado: true, data_pagamento: new Date().toISOString().split('T')[0], baixa: 'juros' })
     .eq('id', parcelaId)
 
   if (e1) return { error: e1.message }
@@ -234,6 +237,7 @@ export async function pagarJuros(parcelaId: string) {
 
   revalidatePath(`/emprestimos/${parcela.emprestimo_id}`)
   revalidatePath('/emprestimos')
+  revalidatePath('/carteira')
   return { success: true }
 }
 
@@ -250,7 +254,7 @@ export async function pagarTudo(parcelaId: string) {
   if (!parcela) return { error: 'Parcela não encontrada' }
 
   await supabase.from('parcelas')
-    .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0] })
+    .update({ pago: true, data_pagamento: new Date().toISOString().split('T')[0], baixa: 'tudo' })
     .eq('id', parcelaId)
 
   await supabase.from('emprestimos')
@@ -260,6 +264,7 @@ export async function pagarTudo(parcelaId: string) {
 
   revalidatePath(`/emprestimos/${parcela.emprestimo_id}`)
   revalidatePath('/emprestimos')
+  revalidatePath('/carteira')
   return { success: true }
 }
 
@@ -271,11 +276,12 @@ export async function marcarParcela(parcelaId: string, pago: boolean) {
   if (!user) return { error: 'Não autenticado' }
 
   const { error } = await supabase.from('parcelas')
-    .update({ pago, data_pagamento: pago ? new Date().toISOString().split('T')[0] : null })
+    .update({ pago, data_pagamento: pago ? new Date().toISOString().split('T')[0] : null, baixa: pago ? 'tudo' : null })
     .eq('id', parcelaId).eq('credor_id', user.id)
   if (error) return { error: error.message }
 
   revalidatePath('/emprestimos')
+  revalidatePath('/carteira')
   return { success: true }
 }
 

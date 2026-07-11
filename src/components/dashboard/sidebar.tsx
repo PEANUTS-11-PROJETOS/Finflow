@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
-import { Home, Users, HandCoins, Settings, LogOut } from 'lucide-react'
+import { Home, Users, HandCoins, Settings, LogOut, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 
 const navLinks = [
+  { href: '/carteira',      label: 'Carteira',       icon: Wallet },
   { href: '/dashboard',     label: 'Painel',         icon: Home },
   { href: '/clientes',      label: 'Clientes',       icon: Users },
   { href: '/emprestimos',   label: 'Empréstimos',    icon: HandCoins },

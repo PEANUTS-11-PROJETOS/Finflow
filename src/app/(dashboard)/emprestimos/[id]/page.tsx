@@ -88,9 +88,9 @@ export default async function EmprestimoDetalhePage({ params }: { params: Promis
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 {statusChip[emprestimo.status] ?? statusChip.ativo}
                 <Badge variant="outline" className="gap-1.5">
-                  {renovavel ? <><RefreshCw className="h-3 w-3" />Renovável</> : `${emprestimo.num_parcelas}× Tabela Price`}
+                  {renovavel ? <><RefreshCw className="h-3 w-3" />Renovável</> : `${emprestimo.num_parcelas} parcelas`}
                 </Badge>
-                <Badge variant="outline">{emprestimo.taxa_juros}% a.m.</Badge>
+                {renovavel && <Badge variant="outline">{emprestimo.taxa_juros}% a.m.</Badge>}
               </div>
               <h1 className="font-serif-display text-3xl md:text-4xl leading-[1.1]">
                 Empréstimo de <i>{nomeCliente}</i>

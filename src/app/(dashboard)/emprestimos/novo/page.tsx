@@ -18,7 +18,7 @@ export default async function NovoEmprestimoPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Novo empréstimo</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          As parcelas serão geradas automaticamente pela Tabela Price.
+          Escolha o tipo e preencha os dados do empréstimo.
         </p>
       </div>
       <FormEmprestimo clientes={clientes ?? []} />
